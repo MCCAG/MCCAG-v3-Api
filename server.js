@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { createCanvas, loadImage } from 'canvas';
-import { renderAvatar, renderBackground, regulateAvatar } from './Modules/Renderers/Index.js';
-import { fetchMojangProfile, fetchSkinWebsiteProfile } from './Modules/Network.js';
+
+import { fetchMojangProfile, fetchSkinWebsiteProfile } from './Scripts/Network.js';
+import { renderAvatar, renderBackground, regulateAvatar } from './Scripts/Index.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,20 +23,6 @@ const upload = multer({
     }
 });
 
-
-
-/**
- * 加载图片（统一处理）
- */
-async function loadImageSafe(source) {
-    try {
-        return await loadImage(source);
-    } catch (error) {
-        console.error('加载图片失败:', error);
-        throw new Error('加载图片失败');
-    }
-}
-
 /**
  * 获取皮肤图片
  */
@@ -44,20 +31,20 @@ async function getSkinImage(method, data) {
         case 'mojang':
             const profile = await fetchMojangProfile(data.username);
             if (!profile) throw new Error('未找到该玩家信息');
-            return await loadImageSafe(`https://crafatar.com/skins/${profile.id}`);
+            return await loadImage(`https://crafatar.com/skins/${profile.id}`);
 
         case 'website':
             const website = 'https://' + data.website;
             const skinData = await fetchSkinWebsiteProfile(website, data.username);
             if (!skinData || !skinData.skins) throw new Error('未找到该玩家的皮肤数据');
             const texturePath = Object.values(skinData.skins)[0];
-            return await loadImageSafe(`${website}/textures/${texturePath}`);
+            return await loadImage(`${website}/textures/${texturePath}`);
 
         case 'upload':
-            return await loadImageSafe(data.skinBuffer);
+            return await loadImage(data.skinBuffer);
 
         default:
-            throw new Error('请提供有效的皮肤获取方式');
+            throw new Error('请提供有效的皮肤获取方式!');
     }
 }
 
@@ -84,12 +71,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
             backgroundOptions = {}
         } = req.body;
 
-        if (!method) {
-            return res.status(400).json({
-                error: '参数错误',
-                message: '请指定皮肤获取方式 (mojang, website, upload)'
-            });
-        }
+        if (!method) return res.status(400).json({ message: '请指定皮肤获取方式 mojang, website, upload 之中的一个！' });
 
         // 解析JSON字符串参数
         const parsedGenerateOptions = typeof generateOptions === 'string'
@@ -105,8 +87,8 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
             scale: 100,
             shadow: 50,
             texture: true,
-            color: '#ffffff',
-            border: 10,
+            color: '#FFFFFF',
+            border: 1,
             ...parsedGenerateOptions
         };
 
@@ -121,11 +103,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
 
         // 获取皮肤图片
         let skinImage;
-        const skinData = {
-            username,
-            website,
-            skinBuffer: req.file?.buffer
-        };
+        const skinData = { username, website, skinBuffer: req.file?.buffer };
 
         skinImage = await getSkinImage(method, skinData);
 
@@ -138,12 +116,12 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
 
         // 合成最终图片
         const finalCanvas = createCanvas(1000, 1000);
-        const ctx = finalCanvas.getContext('2d');
+        const context = finalCanvas.getContext('2d');
 
         // 绘制背景
-        ctx.drawImage(backgroundCanvas, 0, 0);
+        context.drawImage(backgroundCanvas, 0, 0);
         // 绘制头像
-        ctx.drawImage(regulatedAvatarCanvas, 0, 0);
+        context.drawImage(regulatedAvatarCanvas, 0, 0);
 
         // 返回图片
         const buffer = finalCanvas.toBuffer('image/png');
@@ -159,8 +137,8 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
     } catch (error) {
         console.error('生成头像失败:', error);
         res.status(500).json({
-            error: '生成头像失败',
-            message: error.message
+            error: '生成头像失败！',
+            message: error
         });
     }
 });
@@ -232,36 +210,6 @@ app.post('/api/avatar', upload.single('skin'), async (req, res) => {
     }
 });
 
-/**
- * 获取玩家信息
- */
-app.get('/api/player/:username', async (req, res) => {
-    try {
-        const { username } = req.params;
-        const profile = await fetchMojangProfile(username);
-
-        if (!profile) {
-            return res.status(404).json({
-                error: '玩家不存在',
-                message: '未找到该玩家信息'
-            });
-        }
-
-        res.json({
-            id: profile.id,
-            name: profile.name,
-            skinUrl: `https://crafatar.com/skins/${profile.id}`,
-            avatarUrl: `https://crafatar.com/avatars/${profile.id}`
-        });
-
-    } catch (error) {
-        console.error('获取玩家信息失败:', error);
-        res.status(500).json({
-            error: '获取玩家信息失败',
-            message: error.message
-        });
-    }
-});
 
 /**
  * 获取支持的模型类型
@@ -308,8 +256,8 @@ app.use((error, _req, res, _next) => {
     if (error instanceof multer.MulterError) {
         if (error.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
-                error: '文件太大',
-                message: '图片大小不能超过2MB'
+                error: '文件太大！',
+                message: '图片大小不能超过 2MB ！'
             });
         }
     }

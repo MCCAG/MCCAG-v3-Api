@@ -22,11 +22,11 @@ function layerSlices(bottomSlice, topSlice) {
 
 // 主色提取
 function getDominantColor(canvas, x = 0, y = 0, width = null, height = null) {
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const context = canvas.getContext('2d', { willReadFrequently: true });
     width = width ?? canvas.width;
     height = height ?? canvas.height;
     
-    const imageData = ctx.getImageData(x, y, width, height);
+    const imageData = context.getImageData(x, y, width, height);
     const data = imageData.data;
     
     // 使用 Map 替代对象，提高大数据量性能

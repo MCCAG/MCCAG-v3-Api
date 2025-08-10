@@ -22,7 +22,7 @@
 ## 安装依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 > **注意**: 如果 canvas 安装失败，请先安装系统依赖：
@@ -33,10 +33,10 @@ npm install
 
 ```bash
 # 生产环境
-npm start
+pnpm start
 
 # 开发环境（支持热重载）
-npm run dev
+pnpm run dev
 ```
 
 ## API 接口
