@@ -58,7 +58,7 @@ app.get('/health', (_req, res) => {
 });
 
 /**
- * 生成头像API
+ * 生成头像API（统一接口）
  */
 app.post('/api/generate', upload.single('skin'), async (req, res) => {
     try {
@@ -68,10 +68,16 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
             website,
             modelType = 'minimal',
             generateOptions = {},
-            backgroundOptions = {}
+            backgroundOptions = {},
+            withBackground = true
         } = req.body;
 
-        if (!method) return res.status(400).json({ message: '请指定皮肤获取方式 mojang, website, upload 之中的一个！' });
+        if (!method) {
+            return res.status(400).json({
+                error: '参数错误',
+                message: '请指定皮肤获取方式 (mojang, website, upload)'
+            });
+        }
 
         // 解析JSON字符串参数
         const parsedGenerateOptions = typeof generateOptions === 'string'
@@ -102,96 +108,35 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
         };
 
         // 获取皮肤图片
-        let skinImage;
         const skinData = { username, website, skinBuffer: req.file?.buffer };
-
-        skinImage = await getSkinImage(method, skinData);
-
-        // 生成头像
-        const avatarCanvas = renderAvatar(skinImage, modelType, defaultGenerateOptions);
-        const regulatedAvatarCanvas = regulateAvatar(avatarCanvas, defaultGenerateOptions);
-
-        // 生成背景
-        const backgroundCanvas = renderBackground(modelType, defaultBackgroundOptions);
-
-        // 合成最终图片
-        const finalCanvas = createCanvas(1000, 1000);
-        const context = finalCanvas.getContext('2d');
-
-        // 绘制背景
-        context.drawImage(backgroundCanvas, 0, 0);
-        // 绘制头像
-        context.drawImage(regulatedAvatarCanvas, 0, 0);
-
-        // 返回图片
-        const buffer = finalCanvas.toBuffer('image/png');
-
-        res.set({
-            'Content-Type': 'image/png',
-            'Content-Length': buffer.length,
-            'Cache-Control': 'public, max-age=3600'
-        });
-
-        res.send(buffer);
-
-    } catch (error) {
-        console.error('生成头像失败:', error);
-        res.status(500).json({
-            error: '生成头像失败！',
-            message: error
-        });
-    }
-});
-
-/**
- * 仅生成头像（无背景）
- */
-app.post('/api/avatar', upload.single('skin'), async (req, res) => {
-    try {
-        const {
-            method,
-            username,
-            website,
-            modelType = 'minimal',
-            generateOptions = {}
-        } = req.body;
-
-        if (!method) {
-            return res.status(400).json({
-                error: '参数错误',
-                message: '请指定皮肤获取方式 (mojang, website, upload)'
-            });
-        }
-
-        const parsedGenerateOptions = typeof generateOptions === 'string'
-            ? JSON.parse(generateOptions)
-            : generateOptions;
-
-        const defaultGenerateOptions = {
-            type: 'head',
-            scale: 100,
-            shadow: 50,
-            texture: true,
-            color: '#ffffff',
-            border: 10,
-            ...parsedGenerateOptions
-        };
-
-        // 获取皮肤图片
-        const skinData = {
-            username,
-            website,
-            skinBuffer: req.file?.buffer
-        };
-
         const skinImage = await getSkinImage(method, skinData);
 
         // 生成头像
         const avatarCanvas = renderAvatar(skinImage, modelType, defaultGenerateOptions);
         const regulatedAvatarCanvas = regulateAvatar(avatarCanvas, defaultGenerateOptions);
 
+        let finalCanvas;
+        
+        // 根据 withBackground 参数决定是否添加背景
+        if (withBackground === true || withBackground === 'true') {
+            // 生成背景
+            const backgroundCanvas = renderBackground(modelType, defaultBackgroundOptions);
+
+            // 合成最终图片
+            finalCanvas = createCanvas(1000, 1000);
+            const context = finalCanvas.getContext('2d');
+
+            // 绘制背景
+            context.drawImage(backgroundCanvas, 0, 0);
+            // 绘制头像
+            context.drawImage(regulatedAvatarCanvas, 0, 0);
+        } else {
+            // 无背景，直接使用头像
+            finalCanvas = regulatedAvatarCanvas;
+        }
+
         // 返回图片
-        const buffer = regulatedAvatarCanvas.toBuffer('image/png');
+        const buffer = finalCanvas.toBuffer('image/png');
 
         res.set({
             'Content-Type': 'image/png',
@@ -209,6 +154,7 @@ app.post('/api/avatar', upload.single('skin'), async (req, res) => {
         });
     }
 });
+
 
 
 /**

@@ -4,7 +4,7 @@
 
 ## 项目结构
 
-```
+```text
 ├── server.js              # 主服务器文件
 ├── package.json           # 项目配置和依赖
 ├── Modules/
@@ -25,9 +25,34 @@
 pnpm install
 ```
 
-> **注意**: 如果 canvas 安装失败，请先安装系统依赖：
-> - **macOS**: `brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman`
-> - **Ubuntu**: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
+### Canvas 安装问题解决方案
+
+如果 Canvas 安装失败，请根据你的系统安装相应依赖：
+
+**macOS:**
+
+```bash
+# 使用 Homebrew 安装系统依赖
+brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman
+
+# 然后重新安装
+pnpm install
+```
+
+**Ubuntu/Debian:**
+
+```bash
+# 安装系统依赖
+sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
+# 然后重新安装
+pnpm install
+```
+
+**Windows:**
+
+- 推荐使用 WSL2 或 Docker 运行项目
+- 或者安装 Visual Studio Build Tools
 
 ## 启动服务器
 
@@ -39,73 +64,378 @@ pnpm start
 pnpm run dev
 ```
 
-## API 接口
+## API 接口文档
 
 ### 1. 健康检查
 
-```
+检查服务器运行状态。
+
+**请求**
+
+```http
 GET /health
 ```
 
-### 2. 生成头像（带背景）
+**响应**
 
+```json
+{
+  "status": "ok",
+  "message": "Minecraft 头像生成器服务运行正常！"
+}
 ```
+
+---
+
+### 2. 生成头像
+
+生成 Minecraft 头像图片，支持带背景或透明背景。
+
+**请求**
+
+```http
 POST /api/generate
+Content-Type: application/json 或 multipart/form-data
 ```
 
-参数：
+**参数**
 
-- `method`: 获取皮肤方式 (`mojang`, `website`, `upload`) **必填**
-- `username`: 玩家用户名（mojang/website 模式时必填）
-- `website`: 皮肤站地址（website 模式时必填）
-- `skin`: 皮肤文件（upload 模式时必填）
-- `modelType`: 模型类型 (`minimal`, `vintage`, `side`)
-- `generateOptions`: 生成选项（JSON 字符串）
-- `backgroundOptions`: 背景选项（JSON 字符串）
+| 参数名              | 类型          | 必填     | 说明                                                             |
+| ------------------- | ------------- | -------- | ---------------------------------------------------------------- |
+| `method`            | string        | ✅       | 皮肤获取方式：`mojang`、`website`、`upload`                      |
+| `username`          | string        | 条件必填 | 玩家用户名（mojang/website 模式时必填）                          |
+| `website`           | string        | 条件必填 | 皮肤站地址（website 模式时必填，不含 https://）                  |
+| `skin`              | file          | 条件必填 | 皮肤文件（upload 模式时必填，最大 2MB）                          |
+| `modelType`         | string        | ❌       | 模型类型，默认 `minimal`                                         |
+| `withBackground`    | boolean       | ❌       | 是否生成背景，默认 `true`                                        |
+| `generateOptions`   | string/object | ❌       | 生成选项（JSON 字符串或对象）                                    |
+| `backgroundOptions` | string/object | ❌       | 背景选项（JSON 字符串或对象，仅当 `withBackground=true` 时有效） |
 
-### 3. 生成头像（无背景）
+**generateOptions 参数**
 
-```
-POST /api/avatar
-```
+| 参数名    | 类型    | 默认值    | 说明                                                |
+| --------- | ------- | --------- | --------------------------------------------------- |
+| `type`    | string  | `head`    | 生成类型：`head`、`half`、`full`（仅 minimal 模式） |
+| `scale`   | number  | `100`     | 图片缩放比例：50-200                                |
+| `shadow`  | number  | `50`      | 阴影深度：0-100                                     |
+| `texture` | boolean | `true`    | 是否启用纹理（仅 side 模式）                        |
+| `color`   | string  | `#FFFFFF` | 边框颜色（仅 vintage 模式）                         |
+| `border`  | number  | `1`       | 边框粗细：0-50（仅 vintage 模式）                   |
 
-参数同上，但不包含背景选项。
+**backgroundOptions 参数**
 
-### 4. 获取玩家信息
+| 参数名     | 类型   | 默认值                   | 说明                               |
+| ---------- | ------ | ------------------------ | ---------------------------------- |
+| `angle`    | number | `45`                     | 渐变角度：0-360                    |
+| `colors`   | array  | `["#87CEEB", "#FFB6C1"]` | 背景颜色数组                       |
+| `stripes`  | number | `5`                      | 条纹数量（仅 vintage 模式）        |
+| `vignette` | number | `30`                     | 暗角强度：0-100（仅 vintage 模式） |
+| `image`    | object | `null`                   | 自定义背景图片                     |
 
-```
-GET /api/player/:username
-```
+**响应**
 
-### 5. 获取支持的模型类型
+- **成功**: 返回 PNG 图片文件（Content-Type: image/png）
+- **失败**: 返回 JSON 错误信息
 
-```
+---
+
+### 3. 获取支持的模型类型
+
+获取所有支持的头像渲染模型及其配置选项。
+
+**请求**
+
+```http
 GET /api/models
 ```
 
+**响应**
+
+```json
+{
+  "models": [
+    {
+      "type": "minimal",
+      "name": "简约风格",
+      "description": "灵感来源：噪音回放",
+      "options": {
+        "type": ["head", "half", "full"],
+        "scale": { "min": 50, "max": 200, "default": 100 },
+        "shadow": { "min": 0, "max": 100, "default": 50 }
+      }
+    },
+    {
+      "type": "vintage",
+      "name": "复古风格",
+      "description": "灵感来源：Minecraft Skin Avatar",
+      "options": {
+        "scale": { "min": 50, "max": 200, "default": 100 },
+        "border": { "min": 0, "max": 50, "default": 10 },
+        "color": "string"
+      }
+    },
+    {
+      "type": "side",
+      "name": "侧面风格",
+      "description": "灵感来源：Henry Packs",
+      "options": {
+        "scale": { "min": 50, "max": 200, "default": 100 },
+        "shadow": { "min": 0, "max": 100, "default": 50 },
+        "texture": { "type": "boolean", "default": true }
+      }
+    }
+  ]
+}
+```
+
+---
+
+### 错误响应格式
+
+所有接口的错误响应都遵循以下格式：
+
+```json
+{
+  "error": "错误类型",
+  "message": "详细错误信息"
+}
+```
+
+**常见错误码**
+
+| HTTP 状态码 | 错误类型       | 说明                        |
+| ----------- | -------------- | --------------------------- |
+| 400         | 参数错误       | 缺少必填参数或参数格式错误  |
+| 400         | 文件太大       | 上传的皮肤文件超过 2MB 限制 |
+| 404         | 玩家不存在     | 未找到指定的 Minecraft 玩家 |
+| 404         | 接口不存在     | 请求的 API 路径不存在       |
+| 500         | 生成头像失败   | 头像生成过程中发生错误      |
+| 500         | 服务器内部错误 | 服务器内部发生未知错误      |
+
 ## 使用示例
 
-### curl 示例
+### 基础示例
+
+#### 1. 使用 Mojang 用户名生成头像（带背景）
 
 ```bash
-# 使用 Mojang 用户名生成头像
 curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
-  -d '{"method": "mojang", "username": "Notch", "modelType": "vintage"}' \
+  -d '{"method": "mojang", "username": "Notch", "modelType": "minimal"}' \
   --output avatar.png
+```
 
-# 使用皮肤站生成头像
+#### 2. 使用皮肤站生成头像（无背景）
+
+```bash
 curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
-  -d '{"method": "website", "username": "player", "website": "example.com", "modelType": "minimal"}' \
+  -d '{"method": "website", "username": "player", "website": "example.com", "modelType": "vintage", "withBackground": false}' \
   --output avatar.png
+```
 
-# 上传皮肤文件生成头像
+#### 3. 上传皮肤文件生成头像
+
+```bash
 curl -X POST http://localhost:3000/api/generate \
   -F "method=upload" \
   -F "modelType=side" \
+  -F "withBackground=true" \
   -F "skin=@skin.png" \
   --output avatar.png
+```
+
+### 高级用法
+
+#### 1. 自定义生成选项
+
+```bash
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "mojang",
+    "username": "Notch",
+    "modelType": "minimal",
+    "generateOptions": {
+      "type": "full",
+      "scale": 150,
+      "shadow": 80
+    }
+  }' \
+  --output avatar.png
+```
+
+#### 2. 自定义背景选项
+
+```bash
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "mojang",
+    "username": "Notch",
+    "modelType": "minimal",
+    "backgroundOptions": {
+      "angle": 90,
+      "colors": ["#FF6B6B", "#4ECDC4"]
+    }
+  }' \
+  --output avatar.png
+```
+
+#### 3. Vintage 模式自定义边框
+
+```bash
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "mojang",
+    "username": "Notch",
+    "modelType": "vintage",
+    "generateOptions": {
+      "scale": 120,
+      "border": 15,
+      "color": "#FF0000"
+    },
+    "backgroundOptions": {
+      "stripes": 8,
+      "vignette": 50
+    }
+  }' \
+  --output avatar.png
+```
+
+#### 4. 生成透明背景头像
+
+```bash
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "mojang",
+    "username": "Notch",
+    "modelType": "side",
+    "withBackground": false,
+    "generateOptions": {
+      "scale": 200,
+      "shadow": 30,
+      "texture": false
+    }
+  }' \
+  --output avatar_transparent.png
+```
+
+### JavaScript 示例
+
+#### 使用 fetch API
+
+```javascript
+// 生成带背景头像
+async function generateAvatar(username, withBackground = true) {
+  try {
+    const requestBody = {
+      method: "mojang",
+      username: username,
+      modelType: "minimal",
+      withBackground: withBackground,
+      generateOptions: {
+        type: "head",
+        scale: 100,
+        shadow: 50,
+      },
+    };
+
+    // 只有在需要背景时才添加背景选项
+    if (withBackground) {
+      requestBody.backgroundOptions = {
+        colors: ["#87CEEB", "#FFB6C1"],
+      };
+    }
+
+    const response = await fetch("http://localhost:3000/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      // 显示图片
+      const img = document.createElement("img");
+      img.src = url;
+      document.body.appendChild(img);
+    } else {
+      const error = await response.json();
+      console.error("生成失败:", error.message);
+    }
+  } catch (error) {
+    console.error("请求失败:", error);
+  }
+}
+
+// 上传皮肤文件生成头像
+async function uploadSkinAndGenerate(file, withBackground = true) {
+  const formData = new FormData();
+  formData.append("method", "upload");
+  formData.append("modelType", "vintage");
+  formData.append("withBackground", withBackground);
+  formData.append("skin", file);
+  formData.append(
+    "generateOptions",
+    JSON.stringify({
+      scale: 150,
+      border: 10,
+      color: "#00FF00",
+    })
+  );
+
+  // 只有在需要背景时才添加背景选项
+  if (withBackground) {
+    formData.append(
+      "backgroundOptions",
+      JSON.stringify({
+        colors: ["#FF6B6B", "#4ECDC4"],
+        stripes: 6,
+      })
+    );
+  }
+
+  try {
+    const response = await fetch("http://localhost:3000/api/generate", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } else {
+      const error = await response.json();
+      throw new Error(error.message);
+    }
+  } catch (error) {
+    console.error("上传失败:", error);
+    throw error;
+  }
+}
+```
+
+#### 获取模型信息
+
+```javascript
+async function getModels() {
+  try {
+    const response = await fetch("http://localhost:3000/api/models");
+    const data = await response.json();
+
+    console.log("支持的模型:", data.models);
+    return data.models;
+  } catch (error) {
+    console.error("获取模型信息失败:", error);
+  }
+}
 ```
 
 ## 模型类型
@@ -114,9 +444,126 @@ curl -X POST http://localhost:3000/api/generate \
 - **vintage**: 复古风格，灵感来源：Minecraft Skin Avatar
 - **side**: 侧面风格，灵感来源：Henry Packs
 
+## 配置选项
+
+### 环境变量
+
+| 变量名 | 默认值 | 说明           |
+| ------ | ------ | -------------- |
+| `PORT` | `3000` | 服务器监听端口 |
+
+### 配置示例
+
+```bash
+# 设置端口
+export PORT=8080
+
+# 启动服务器
+pnpm start
+```
+
+## 部署
+
+### Docker 部署
+
+创建 `Dockerfile`：
+
+```dockerfile
+FROM node:18-alpine
+
+# 安装 Canvas 依赖
+RUN apk add --no-cache \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev \
+    pixman-dev \
+    pkgconfig
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+构建和运行：
+
+```bash
+# 构建镜像
+docker build -t minecraft-avatar-server .
+
+# 运行容器
+docker run -p 3000:3000 minecraft-avatar-server
+```
+
+### PM2 部署
+
+```bash
+# 安装 PM2
+npm install -g pm2
+
+# 启动应用
+pm2 start server.js --name "minecraft-avatar-server"
+
+# 查看状态
+pm2 status
+
+# 查看日志
+pm2 logs minecraft-avatar-server
+```
+
+## 性能优化
+
+### 缓存建议
+
+- 使用 Redis 缓存生成的头像
+- 设置适当的 HTTP 缓存头
+- 考虑使用 CDN 分发静态资源
+
+### 负载均衡
+
+```javascript
+// 使用 cluster 模块
+import cluster from "cluster";
+import os from "os";
+
+if (cluster.isPrimary) {
+  const numCPUs = os.cpus().length;
+
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on("exit", (worker) => {
+    console.log(`Worker ${worker.process.pid} died`);
+    cluster.fork();
+  });
+} else {
+  // 启动服务器
+  import("./server.js");
+}
+```
+
 ## 技术栈
 
 - Node.js + Express - Web 框架
 - Canvas - 图像处理和渲染
 - Multer - 文件上传处理
 - CORS - 跨域支持
+
+## 特性
+
+- ✅ 完整的 Minecraft 头像渲染功能
+- ✅ 多种渲染风格（简约、复古、侧面）
+- ✅ 支持多种皮肤来源（Mojang、皮肤站、上传）
+- ✅ 可自定义生成选项和背景
+- ✅ 文件大小限制和类型验证
+- ✅ 内存存储，不写入磁盘
+- ✅ 完整的错误处理和日志记录
