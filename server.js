@@ -13,15 +13,15 @@ const port = process.env.PORT || 3000;
 // 请求日志中间件
 app.use((req, res, next) => {
     const startTime = Date.now();
-    
+
     Logger.log('Server', `${req.method} ${req.url}`);
-    
+
     // 记录响应时间
     res.on('finish', () => {
         const duration = Date.now() - startTime;
         Logger.log('Server', `${res.statusCode} - ${duration}ms`);
     });
-    
+
     next();
 });
 
@@ -39,12 +39,9 @@ const upload = multer({
     }
 });
 
-/**
- * 获取皮肤图片
- */
 async function getSkinImage(method, data) {
     Logger.log('SkinLoader', `开始获取皮肤，方式: ${method}`);
-    
+
     try {
         switch (method) {
             case 'mojang':
@@ -55,21 +52,19 @@ async function getSkinImage(method, data) {
                     throw new Error('未找到该玩家信息');
                 }
                 Logger.log('SkinLoader', `找到玩家: ${profile.name}`);
-                
-                // 使用 Mojang 官方 API 获取皮肤纹理信息
+
                 try {
                     const textureResponse = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${profile.id}?unsigned=false`);
-                    if (!textureResponse.ok) 
+                    if (!textureResponse.ok)
                         throw new Error(`获取纹理信息失败: ${textureResponse.status}`);
-                    
+
                     const textureData = await textureResponse.json();
-                    if (!textureData.properties || !textureData.properties[0]) 
+                    if (!textureData.properties || !textureData.properties[0])
                         throw new Error('纹理数据不存在');
-                    
-                    // 解码 Base64 纹理数据
+
                     const textureInfo = JSON.parse(Buffer.from(textureData.properties[0].value, 'base64').toString());
                     const skinUrl = textureInfo.textures.SKIN.url;
-                    
+
                     const skinImage = await loadImage(skinUrl);
                     Logger.log('SkinLoader', `皮肤加载成功 - ${skinImage.width}x${skinImage.height}`);
                     return skinImage;
@@ -81,17 +76,17 @@ async function getSkinImage(method, data) {
             case 'website':
                 Logger.log('SkinLoader', `皮肤站模式 - ${data.website}/${data.username}`);
                 const website = 'https://' + data.website;
-                
+
                 try {
                     const skinData = await fetchSkinWebsiteProfile(website, data.username);
                     if (!skinData || !skinData.skins) {
                         Logger.error('SkinLoader', `皮肤站未找到玩家: ${data.username}`);
                         throw new Error('未找到该玩家的皮肤数据');
                     }
-                    
+
                     const texturePath = Object.values(skinData.skins)[0];
                     const textureUrl = `${website}/textures/${texturePath}`;
-                    
+
                     const skinImage = await loadImage(textureUrl);
                     Logger.log('SkinLoader', `皮肤站图片加载成功 - ${skinImage.width}x${skinImage.height}`);
                     return skinImage;
@@ -106,7 +101,7 @@ async function getSkinImage(method, data) {
                     Logger.error('SkinLoader', '上传模式但未找到文件数据');
                     throw new Error('未找到上传的皮肤文件');
                 }
-                
+
                 try {
                     const skinImage = await loadImage(data.skinBuffer);
                     Logger.log('SkinLoader', `上传图片加载成功 - ${skinImage.width}x${skinImage.height}`);
@@ -126,17 +121,13 @@ async function getSkinImage(method, data) {
     }
 }
 
-// API路由
 
-/**
- * 健康检查
- */
 app.get('/health', (_req, res) => {
     const memoryUsage = process.memoryUsage();
     const uptime = process.uptime();
-    
-    res.json({ 
-        status: 'ok', 
+
+    res.json({
+        status: 'ok',
         message: 'Minecraft 头像生成器服务运行正常！',
         uptime: `${Math.floor(uptime / 60)}分${Math.floor(uptime % 60)}秒`,
         memory: {
@@ -147,12 +138,10 @@ app.get('/health', (_req, res) => {
     });
 });
 
-/**
- * 生成头像API（统一接口）
- */
+// 生成头像API
 app.post('/api/generate', upload.single('skin'), async (req, res) => {
     Logger.log('Generator', '开始处理头像生成请求');
-    
+
     try {
         const {
             method,
@@ -199,28 +188,15 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
 
         // 解析JSON字符串参数
         let parsedGenerateOptions, parsedBackgroundOptions;
-        
-        try {
-            parsedGenerateOptions = typeof generateOptions === 'string'
-                ? JSON.parse(generateOptions)
-                : generateOptions;
-        } catch (parseError) {
-            Logger.error('Generator', 'generateOptions 解析失败', parseError);
-            return res.status(400).json({
-                error: '参数错误',
-                message: 'generateOptions 格式错误，请提供有效的 JSON'
-            });
-        }
 
         try {
-            parsedBackgroundOptions = typeof backgroundOptions === 'string'
-                ? JSON.parse(backgroundOptions)
-                : backgroundOptions;
+            parsedGenerateOptions = typeof generateOptions === 'string' ? JSON.parse(generateOptions) : generateOptions;
+            parsedBackgroundOptions = typeof backgroundOptions === 'string' ? JSON.parse(backgroundOptions) : backgroundOptions;
         } catch (parseError) {
-            Logger.error('Generator', 'backgroundOptions 解析失败', parseError);
+            Logger.error('Generator', '参数解析失败', parseError);
             return res.status(400).json({
                 error: '参数错误',
-                message: 'backgroundOptions 格式错误，请提供有效的 JSON'
+                message: '选项格式错误，请提供有效的 JSON'
             });
         }
 
@@ -251,27 +227,20 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
         // 生成头像
         Logger.log('Generator', `开始渲染 - 模型: ${modelType}`);
         const avatarCanvas = renderAvatar(skinImage, modelType, defaultGenerateOptions);
-        
+
         const regulatedAvatarCanvas = regulateAvatar(avatarCanvas, defaultGenerateOptions);
 
         let finalCanvas;
-        
+
         // 根据 withBackground 参数决定是否添加背景
         if (withBackground === true || withBackground === 'true') {
             Logger.log('Generator', '生成背景');
-            // 生成背景
             const backgroundCanvas = renderBackground(modelType, defaultBackgroundOptions);
-
-            // 合成最终图片
             finalCanvas = createCanvas(1000, 1000);
             const context = finalCanvas.getContext('2d');
-
-            // 绘制背景
             context.drawImage(backgroundCanvas, 0, 0);
-            // 绘制头像
             context.drawImage(regulatedAvatarCanvas, 0, 0);
         } else {
-            // 无背景，直接使用头像
             finalCanvas = regulatedAvatarCanvas;
         }
 
@@ -289,20 +258,20 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
 
     } catch (error) {
         Logger.error('Generator', '生成头像失败', error);
-        
+
         // 根据错误类型返回不同的状态码和消息
         let statusCode = 500;
         let errorMessage = error.message;
-        
-        if (error.message.includes('未找到该玩家信息')) 
+
+        if (error.message.includes('未找到该玩家信息'))
             statusCode = 404;
-        else if (error.message.includes('参数错误') || error.message.includes('格式错误')) 
+        else if (error.message.includes('参数错误') || error.message.includes('格式错误'))
             statusCode = 400;
-        else if (error.message.includes('ECONNRESET') || error.message.includes('fetch failed')) 
+        else if (error.message.includes('ECONNRESET') || error.message.includes('fetch failed'))
             errorMessage = '网络连接失败，请稍后重试';
-        else if (error.message.includes('ETIMEDOUT')) 
+        else if (error.message.includes('ETIMEDOUT'))
             errorMessage = '请求超时，请稍后重试';
-        
+
         res.status(statusCode).json({
             error: '生成头像失败',
             message: errorMessage
@@ -310,11 +279,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
     }
 });
 
-
-
-/**
- * 获取支持的模型类型
- */
+// 获取支持的模型类型
 app.get('/api/models', (_req, res) => {
     res.json({
         models: [
@@ -357,18 +322,18 @@ app.use((error, req, res, _next) => {
     Logger.error('Server', `服务器错误: ${req.method} ${req.url}`, error);
 
     if (error instanceof multer.MulterError) {
-        if (error.code === 'LIMIT_FILE_SIZE') 
+        if (error.code === 'LIMIT_FILE_SIZE')
             return res.status(400).json({
                 error: '文件太大',
                 message: '图片大小不能超过 2MB'
             });
-        
-        if (error.code === 'LIMIT_UNEXPECTED_FILE') 
+
+        if (error.code === 'LIMIT_UNEXPECTED_FILE')
             return res.status(400).json({
                 error: '文件字段错误',
                 message: '请使用 skin 字段上传文件'
             });
-        
+
         return res.status(400).json({
             error: '文件上传错误',
             message: error.message
@@ -393,14 +358,14 @@ app.use((_req, res) => {
 // 启动服务器
 app.listen(port, () => {
     Logger.log('Server', `服务器启动 - 端口: ${port}`);
-    
+
     // 定期内存监控（每5分钟）
     setInterval(() => {
         const memoryUsage = process.memoryUsage();
         const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
-        
+
         // 内存使用过高警告
-        if (heapUsedMB > 500) 
+        if (heapUsedMB > 500)
             Logger.warn('Monitor', `内存使用过高: ${heapUsedMB}MB`);
     }, 5 * 60 * 1000);
 });

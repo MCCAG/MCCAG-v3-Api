@@ -1,12 +1,12 @@
 {
-  "name": "minecraft-avatar-server",
+  "name": "minecraft-cute-avatar-generator-api",
   "version": "1.0.0",
   "description": "Minecraft头像生成器HTTP服务器",
-  "main": "server.js",
+  "main": "Server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node scripts.js",
+    "dev": "node --watch Server.js"
   },
   "dependencies": {
     "canvas": "^3.1.2",
@@ -20,6 +20,6 @@
     "generator",
     "api"
   ],
-  "author": "MCCAG",
-  "license": "MIT"
+  "author": "LonelySail",
+  "license": "GUN v3"
 }

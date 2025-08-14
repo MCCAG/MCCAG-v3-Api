@@ -60,7 +60,7 @@ pnpm install
 # 生产环境
 pnpm start
 
-# 开发环境（支持热重载）
+# 开发环境
 pnpm run dev
 ```
 
