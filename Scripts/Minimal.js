@@ -51,28 +51,50 @@ function operate(mainContext, skinCanvas, cropBox, mirror, scaleFactor, pastePos
  * @returns {HTMLCanvasElement} 渲染后的画布
  */
 export function renderAvatar(skinImage, avatarType) {
+    console.log(`[renderAvatar] 开始渲染 - 类型: ${avatarType}, 皮肤尺寸: ${skinImage.width}x${skinImage.height}`);
+    
     let canvas = createCanvas(1000, 1000);
     const context = canvas.getContext('2d');
+    
+    // 设置透明背景
+    context.clearRect(0, 0, 1000, 1000);
+    
+    // 设置阴影效果
     context.shadowColor = `rgba(0, 0, 0, 0.2)`;
     context.shadowOffsetX = 0;
     context.shadowOffsetY = 0;
     context.shadowBlur = 15;
 
-    // 清空画布
-    context.clearRect(0, 0, 1000, 1000);
-
     // 确定皮肤尺寸
     const skinSize = [skinImage.width, skinImage.height];
+    console.log(`[renderAvatar] 原始皮肤尺寸: ${skinSize[0]}x${skinSize[1]}`);
 
-    skinImage = preprecessSkinImage(skinImage);
+    // 预处理皮肤图像
+    const processedSkinImage = preprecessSkinImage(skinImage);
+    console.log(`[renderAvatar] 预处理后尺寸: ${processedSkinImage.width}x${processedSkinImage.height}`);
+    
     // 获取操作列表
     const operations = getOperations(avatarType, skinSize);
+    console.log(`[renderAvatar] 操作数量: ${operations.length}`);
+
+    if (operations.length === 0) {
+        console.error(`[renderAvatar] 未找到操作列表 - 类型: ${avatarType}, 皮肤尺寸: ${skinSize[0]}x${skinSize[1]}`);
+        // 如果没有操作，至少绘制头部
+        const headCanvas = processImage(processedSkinImage, 8, 8, 8, 8, 200, 200);
+        context.drawImage(headCanvas, 400, 400);
+        return canvas;
+    }
 
     // 执行渲染操作
-    for (const operation of operations) operate(context, skinImage, ...operation);
+    for (let i = 0; i < operations.length; i++) {
+        const operation = operations[i];
+        console.log(`[renderAvatar] 执行操作 ${i + 1}/${operations.length}:`, operation);
+        operate(context, processedSkinImage, ...operation);
+    }
 
     // 如果是big_head类型，进行特殊处理
     if (avatarType === 'big-head') {
+        console.log(`[renderAvatar] 处理 big-head 类型`);
         const bigHeadCanvas = createCanvas(1400, 1400);
         const bigHeadContext = bigHeadCanvas.getContext('2d');
 
@@ -85,8 +107,9 @@ export function renderAvatar(skinImage, avatarType) {
         const finalContext = finalCanvas.getContext('2d');
         finalContext.drawImage(bigHeadCanvas, 200, 0, 1000, 1000, 0, 0, 1000, 1000);
 
-        return finalCanvas
+        return finalCanvas;
     }
     
+    console.log(`[renderAvatar] 渲染完成`);
     return canvas;
 }

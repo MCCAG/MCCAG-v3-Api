@@ -6,10 +6,10 @@ export function processImage(
 ) {
     if (!scaledWidth) scaledWidth = cropWidth;
     if (!scaledHeight) scaledHeight = cropHeight;
-    
+
     const canvas = createCanvas(scaledWidth, scaledHeight);
     const context = canvas.getContext('2d');
-    
+
     context.imageSmoothingEnabled = smoothing;
     if (mirror) {
         context.translate(scaledWidth, 0);
@@ -21,42 +21,19 @@ export function processImage(
 
 export function preprecessSkinImage(image) {
     const skinSize = [image.width, image.height];
+    console.log(`[preprecessSkinImage] 原始皮肤尺寸: ${skinSize[0]}x${skinSize[1]}`);
+
     // 调整皮肤图像尺寸
     const resizedSize = (skinSize[0] === 64 && skinSize[1] === 32) ? [128, 64] : [128, 128];
-    return processImage(image, 0, 0, ...skinSize, ...resizedSize);
-}
+    console.log(`[preprecessSkinImage] 目标尺寸: ${resizedSize[0]}x${resizedSize[1]}`);
 
-export function calculateAutoColors(image) {
-    if (!image) return [];
-    
-    // 如果已经是 canvas，直接使用；否则转换为 canvas
-    const canvas = processImage(image, 0, 0, image.width, image.height);
-    const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    
-    let pixelCount = 0;
-    let totalR = 0, totalG = 0, totalB = 0;
-    
-    // 计算所有非透明像素的平均颜色
-    for (let index = 0; index < data.length; index += 4) {
-        const a = data[index + 3];
-        if (a > 128) {
-            totalR += data[index];
-            totalG += data[index + 1];
-            totalB += data[index + 2];
-            pixelCount++;
-        }
+    // 如果尺寸已经正确，直接返回原图
+    if (skinSize[0] === resizedSize[0] && skinSize[1] === resizedSize[1]) {
+        console.log(`[preprecessSkinImage] 尺寸已正确，直接返回原图`);
+        return image;
     }
-    
-    if (pixelCount === 0) return [];
-    
-    const avgR = Math.floor(totalR / pixelCount);
-    const avgG = Math.floor(totalG / pixelCount);
-    const avgB = Math.floor(totalB / pixelCount);
-    const autoColors = [];
-    for (let index = -2; index <= 7; index++) {
-        const offset = index * 30;
-        autoColors.push(`rgb(${Math.max(0, avgR - offset)}, ${Math.max(0, avgG - offset)}, ${Math.max(0, avgB - offset)})`);
-    }
-    return autoColors;
+
+    const processedImage = processImage(image, 0, 0, ...skinSize, ...resizedSize);
+    console.log(`[preprecessSkinImage] 图像预处理完成`);
+    return processedImage;
 }
