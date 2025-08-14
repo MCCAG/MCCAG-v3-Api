@@ -240,9 +240,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
             const context = finalCanvas.getContext('2d');
             context.drawImage(backgroundCanvas, 0, 0);
             context.drawImage(regulatedAvatarCanvas, 0, 0);
-        } else {
-            finalCanvas = regulatedAvatarCanvas;
-        }
+        } else finalCanvas = regulatedAvatarCanvas;
 
         // 返回图片
         const buffer = finalCanvas.toBuffer('image/png');
@@ -273,7 +271,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
             errorMessage = '请求超时，请稍后重试';
 
         res.status(statusCode).json({
-            error: '生成头像失败',
+            success: false,
             message: errorMessage
         });
     }
@@ -324,34 +322,34 @@ app.use((error, req, res, _next) => {
     if (error instanceof multer.MulterError) {
         if (error.code === 'LIMIT_FILE_SIZE')
             return res.status(400).json({
-                error: '文件太大',
-                message: '图片大小不能超过 2MB'
+                success: false,
+                message: '文件太大！图片不能超过 2MB 的限制。'
             });
 
         if (error.code === 'LIMIT_UNEXPECTED_FILE')
             return res.status(400).json({
-                error: '文件字段错误',
-                message: '请使用 skin 字段上传文件'
+                success: false,
+                message: '文件字段错误！请使用 Skin 字段上传文件。'
             });
 
         return res.status(400).json({
-            error: '文件上传错误',
+            success: false,
             message: error.message
         });
     }
 
     // 其他错误
     res.status(500).json({
-        error: '服务器内部错误',
-        message: '服务器处理请求时发生错误，请稍后重试'
+        success: false,
+        message: '服务器处理请求时发生错误，请稍后重试！'
     });
 });
 
 // 404处理
 app.use((_req, res) => {
     res.status(404).json({
-        error: '接口不存在',
-        message: '请检查请求路径是否正确'
+        success: false,
+        message: '接口不存在！请检查请求路径是否正确。'
     });
 });
 
