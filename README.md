@@ -1,21 +1,30 @@
-# Minecraft 头像生成器 HTTP 服务器
+# MCCAG HTTP API
 
 基于 Node.js 的 Minecraft 头像生成器 API 服务。
+
+## 特性
+
+- ✅ 完整的 Minecraft 头像渲染功能
+- ✅ 多种渲染风格（简约、复古、侧面）
+- ✅ 支持多种皮肤来源（Mojang、皮肤站、上传）
+- ✅ 可自定义生成选项和背景
+- ✅ 文件大小限制和类型验证
+- ✅ 内存存储，不写入磁盘
+- ✅ 完整的错误处理和日志记录
 
 ## 项目结构
 
 ```text
-├── server.js              # 主服务器文件
-├── package.json           # 项目配置和依赖
-├── Modules/
+├── Server.js              # 主服务器文件
+├── Scripts/
 │   ├── Network.js         # 网络请求模块
-│   └── Renderers/         # 渲染器模块
-│       ├── Index.js       # 渲染器入口
-│       ├── Data.js        # 皮肤数据定义
-│       ├── Image.js       # 图像处理工具
-│       ├── Minimal.js     # 简约风格渲染器
-│       ├── Vintage.js     # 复古风格渲染器
-│       └── Side.js        # 侧面风格渲染器
+│   ├── Renderers/         # 渲染器模块
+│   ├── Index.js           # 入口文件
+│   ├── Data.js            # 皮肤数据定义
+│   ├── Image.js           # 图像处理工具
+│   ├── Minimal.js         # 简约风格渲染器
+│   ├── Vintage.js         # 复古风格渲染器
+│   └── Side.js            # 侧面风格渲染器
 └── README.md              # 项目说明
 ```
 
@@ -196,8 +205,8 @@ GET /api/models
 
 ```json
 {
-  "error": "错误类型",
-  "message": "详细错误信息"
+  "success": false,
+  "message": "错误信息"
 }
 ```
 
@@ -323,126 +332,11 @@ curl -X POST http://localhost:3000/api/generate \
   --output avatar_transparent.png
 ```
 
-### JavaScript 示例
-
-#### 使用 fetch API
-
-```javascript
-// 生成带背景头像
-async function generateAvatar(username, withBackground = true) {
-  try {
-    const requestBody = {
-      method: "mojang",
-      username: username,
-      modelType: "minimal",
-      withBackground: withBackground,
-      generateOptions: {
-        type: "head",
-        scale: 100,
-        shadow: 50,
-      },
-    };
-
-    // 只有在需要背景时才添加背景选项
-    if (withBackground) {
-      requestBody.backgroundOptions = {
-        colors: ["#87CEEB", "#FFB6C1"],
-      };
-    }
-
-    const response = await fetch("http://localhost:3000/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      // 显示图片
-      const img = document.createElement("img");
-      img.src = url;
-      document.body.appendChild(img);
-    } else {
-      const error = await response.json();
-      console.error("生成失败:", error.message);
-    }
-  } catch (error) {
-    console.error("请求失败:", error);
-  }
-}
-
-// 上传皮肤文件生成头像
-async function uploadSkinAndGenerate(file, withBackground = true) {
-  const formData = new FormData();
-  formData.append("method", "upload");
-  formData.append("modelType", "vintage");
-  formData.append("withBackground", withBackground);
-  formData.append("skin", file);
-  formData.append(
-    "generateOptions",
-    JSON.stringify({
-      scale: 150,
-      border: 10,
-      color: "#00FF00",
-    })
-  );
-
-  // 只有在需要背景时才添加背景选项
-  if (withBackground) {
-    formData.append(
-      "backgroundOptions",
-      JSON.stringify({
-        colors: ["#FF6B6B", "#4ECDC4"],
-        stripes: 6,
-      })
-    );
-  }
-
-  try {
-    const response = await fetch("http://localhost:3000/api/generate", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    } else {
-      const error = await response.json();
-      throw new Error(error.message);
-    }
-  } catch (error) {
-    console.error("上传失败:", error);
-    throw error;
-  }
-}
-```
-
-#### 获取模型信息
-
-```javascript
-async function getModels() {
-  try {
-    const response = await fetch("http://localhost:3000/api/models");
-    const data = await response.json();
-
-    console.log("支持的模型:", data.models);
-    return data.models;
-  } catch (error) {
-    console.error("获取模型信息失败:", error);
-  }
-}
-```
-
 ## 模型类型
 
-- **minimal**: 简约风格，灵感来源：噪音回放
-- **vintage**: 复古风格，灵感来源：Minecraft Skin Avatar
-- **side**: 侧面风格，灵感来源：Henry Packs
+- **Minimal**: 简约风格，灵感来源：噪音回放
+- **Vintage**: 复古风格，灵感来源：Minecraft Skin Avatar
+- **Side**: 侧面风格，灵感来源：Henry Packs
 
 ## 配置选项
 
@@ -502,68 +396,3 @@ docker build -t minecraft-avatar-server .
 # 运行容器
 docker run -p 3000:3000 minecraft-avatar-server
 ```
-
-### PM2 部署
-
-```bash
-# 安装 PM2
-npm install -g pm2
-
-# 启动应用
-pm2 start server.js --name "minecraft-avatar-server"
-
-# 查看状态
-pm2 status
-
-# 查看日志
-pm2 logs minecraft-avatar-server
-```
-
-## 性能优化
-
-### 缓存建议
-
-- 使用 Redis 缓存生成的头像
-- 设置适当的 HTTP 缓存头
-- 考虑使用 CDN 分发静态资源
-
-### 负载均衡
-
-```javascript
-// 使用 cluster 模块
-import cluster from "cluster";
-import os from "os";
-
-if (cluster.isPrimary) {
-  const numCPUs = os.cpus().length;
-
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
-
-  cluster.on("exit", (worker) => {
-    console.log(`Worker ${worker.process.pid} died`);
-    cluster.fork();
-  });
-} else {
-  // 启动服务器
-  import("./server.js");
-}
-```
-
-## 技术栈
-
-- Node.js + Express - Web 框架
-- Canvas - 图像处理和渲染
-- Multer - 文件上传处理
-- CORS - 跨域支持
-
-## 特性
-
-- ✅ 完整的 Minecraft 头像渲染功能
-- ✅ 多种渲染风格（简约、复古、侧面）
-- ✅ 支持多种皮肤来源（Mojang、皮肤站、上传）
-- ✅ 可自定义生成选项和背景
-- ✅ 文件大小限制和类型验证
-- ✅ 内存存储，不写入磁盘
-- ✅ 完整的错误处理和日志记录
