@@ -9,7 +9,6 @@ export function renderAvatar(skinImage, modelType, options) {
     if (modelType === 'minimal') return renderMinimalAvater(skinImage, options.type);
     else if (modelType === 'vintage') return renderVintageAvater(skinImage, options);
     else if (modelType === 'side') return renderSideAvater(skinImage, options.texture);
-    // 其他类型的渲染逻辑可以在这里添加
     throw new Error(`不支持的类型：${modelType}`);
 }
 
