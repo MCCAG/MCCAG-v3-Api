@@ -25,11 +25,11 @@ export async function request(url, max = 3, count = 0) {
         if (response.status === 404)
             return null;
 
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}：${response.statusText}`);
 
     } catch (error) {
         if (count >= max - 1) {
-            Logger.error('Network', `请求失败: ${url}`, error);
+            Logger.error('Network', `请求失败：${url}`, error);
             throw error;
         }
 
@@ -41,33 +41,33 @@ export async function request(url, max = 3, count = 0) {
 }
 
 export async function fetchMojangProfile(player) {
-    Logger.log('Network', `查询 Mojang 玩家: ${player}`);
+    Logger.log('Network', `查询 Mojang 玩家：${player}`);
 
     try {
         const profile = await request(`https://api.mojang.com/users/profiles/minecraft/${player}`);
         if (profile)
-            Logger.log('Network', `找到玩家: ${profile.name}`);
+            Logger.log('Network', `找到玩家：${profile.name}`);
         else
-            Logger.log('Network', `玩家不存在: ${player}`);
+            Logger.log('Network', `玩家不存在：${player}`);
         return profile;
     } catch (error) {
-        Logger.error('Network', `查询 Mojang 失败: ${player}`, error);
-        throw new Error(`查询 Mojang 玩家信息失败: ${error.message}`);
+        Logger.error('Network', `查询 Mojang 失败：${player}`, error);
+        throw new Error(`查询 Mojang 玩家信息失败：${error.message}`);
     }
 }
 
 export async function fetchSkinWebsiteProfile(website, player) {
-    Logger.log('Network', `查询皮肤站: ${player}@${website}`);
+    Logger.log('Network', `查询皮肤站：${player}@${website}`);
 
     try {
         const skinData = await request(`${website}/csl/${player}.json`);
         if (skinData)
             Logger.log('Network', `找到皮肤数据`);
         else
-            Logger.log('Network', `皮肤站无此玩家: ${player}`);
+            Logger.log('Network', `皮肤站无此玩家：${player}`);
         return skinData;
     } catch (error) {
-        Logger.error('Network', `查询皮肤站失败: ${player}`, error);
-        throw new Error(`查询皮肤站数据失败: ${error.message}`);
+        Logger.error('Network', `查询皮肤站失败：${player}`, error);
+        throw new Error(`查询皮肤站数据失败：${error.message}`);
     }
 }

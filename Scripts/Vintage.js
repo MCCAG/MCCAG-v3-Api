@@ -180,7 +180,7 @@ export function renderAvatar(skinImage, options) {
         slices[name] = processImage(skinImage, ...cropBox, null, null, mirror);
     }
 
-    // 4. 合并分层和处理各部分（直接在切片canvas上处理，减少canvas创建）
+    // 4. 合并分层和处理各部分(直接在切片canvas上处理，减少canvas创建)
     const head = operationData.headOuter
         ? layerSlices(slices.head, slices.headOuter)
         : slices.head;
@@ -238,7 +238,7 @@ export function renderAvatar(skinImage, options) {
     );
     const totalHeight = headHeight + Math.max(torsoHeight, armHeight) + legsHeight + 4 * options.border;
 
-    // 6. 绘制人形到临时画布（只用一个canvas）
+    // 6. 绘制人形到临时画布(只用一个canvas)
     const tempCanvas = createCanvas(totalWidth, totalHeight);
     const tempContext = tempCanvas.getContext('2d');
     tempContext.imageSmoothingEnabled = false;

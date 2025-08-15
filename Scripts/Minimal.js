@@ -26,7 +26,7 @@ function operate(mainContext, skinCanvas, cropBox, mirror, scaleFactor, pastePos
 }
 
 export function renderAvatar(skinImage, avatarType) {
-    Logger.log('Minimal', `开始渲染 - 类型: ${avatarType}`);
+    Logger.log('Minimal', `开始渲染 - 类型：${avatarType}`);
     
     const canvas = createCanvas(1000, 1000);
     const context = canvas.getContext('2d');
@@ -42,7 +42,7 @@ export function renderAvatar(skinImage, avatarType) {
     const operations = getOperations(avatarType, skinSize);
 
     if (operations.length === 0) {
-        Logger.error('Minimal', `未找到操作列表 - 类型: ${avatarType}`);
+        Logger.error('Minimal', `未找到操作列表 - 类型：${avatarType}`);
         const headCanvas = processImage(processedSkinImage, 8, 8, 8, 8, 200, 200);
         context.drawImage(headCanvas, 400, 400);
         return canvas;

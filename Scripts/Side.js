@@ -17,7 +17,7 @@ function getOperations(skinSize) {
 
 
 /**
- * 处理图像部分（裁剪、缩放、镜像、阴影）
+ * 处理图像部分(裁剪、缩放、镜像、阴影)
  * @param {CanvasRenderingContext2D} mainContext - 主画布上下文
  * @param {HTMLCanvasElement} skinCanvas - 皮肤图像画布
  * @param {Array} cropBox - 裁剪框 [x, y, width, height]
@@ -35,8 +35,8 @@ function operate(mainContext, skinCanvas, cropBox, mirror, scaleFactor, pastePos
         cropWidth * scaleFactor, cropHeight * scaleFactor, mirror || false
     );
 
-    // 将裁剪的图像粘贴到带边框的画布中（15像素内边距）
-    // 在主上下文中绘制带边框的图像（调整粘贴位置）
+    // 将裁剪的图像粘贴到带边框的画布中(15像素内边距)
+    // 在主上下文中绘制带边框的图像(调整粘贴位置)
     mainContext.drawImage(canvas, pasteX, pasteY);
 }
 
