@@ -2,7 +2,7 @@
 
 基于 Node.js 的 Minecraft 头像生成器 API 服务。
 
-[接口文档](#API 接口文档)
+[接口文档](https://github.com/MCCAG/MCCAG-v3-Api#api-%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3)
 
 ## 特性
 
