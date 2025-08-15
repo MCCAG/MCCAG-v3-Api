@@ -9,6 +9,7 @@ import { renderAvatar, renderBackground, regulateAvatar } from './Scripts/Index.
 
 const app = express();
 const port = process.env.PORT || 3000;
+const version = '1.0.1';
 
 // 请求日志中间件
 app.use((req, res, next) => {
@@ -173,6 +174,7 @@ app.get('/health', (_req, res) => {
 
     res.json({
         status: 'ok',
+        version,
         message: 'Minecraft 头像生成器服务运行正常！',
         uptime: `${Math.floor(uptime / 60)}分${Math.floor(uptime % 60)}秒`,
         memory: {

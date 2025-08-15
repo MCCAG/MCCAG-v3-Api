@@ -94,7 +94,14 @@ GET /health
 ```json
 {
   "status": "ok",
-  "message": "Minecraft 头像生成器服务运行正常！"
+  "version": "1.0.1",
+  "message": "Minecraft 头像生成器服务运行正常！",
+  "uptime": "15分32秒",
+  "memory": {
+    "used": "45MB",
+    "total": "128MB"
+  },
+  "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
 
@@ -109,7 +116,7 @@ GET /health
 > 
 > 但请注意 POST 支持 Upload 上传皮肤，但是不支持 Url 获取皮肤；而 GET 不支持 Upload 但支持 Url 方式。
 
-#### GET
+#### POST
 
 **请求**
 
@@ -161,14 +168,14 @@ Content-Type: application/json 或 multipart/form-data
 
 ---
 
-#### POST
+#### GET
 
 通过URL参数快速生成头像，适合直接在浏览器中访问或嵌入到网页中。
 
 **请求**
 
 ```http
-GET /api/generate/:modelType/:method/:username
+GET /api/generate/{modelType}/{method}/{username}
 ```
 
 **路径参数**
