@@ -14,7 +14,7 @@ const port = process.env.PORT || 3000;
 app.use((req, res, next) => {
     const startTime = Date.now();
     const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || '';
-    Logger.log('Server', `(${ip})${req.method} ${req.url}`);
+    Logger.log('Server', `(${ip}) ${req.method} ${req.url}`);
     // 记录响应时间
     res.on('finish', () => {
         const duration = Date.now() - startTime;
@@ -246,8 +246,8 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
         };
 
         // 处理背景选项 - 空对象或null时不生成背景
-        const finalBackgroundOptions = parsedBackgroundOptions && Object.keys(parsedBackgroundOptions).length > 0 
-            ? parsedBackgroundOptions 
+        const finalBackgroundOptions = parsedBackgroundOptions && Object.keys(parsedBackgroundOptions).length > 0
+            ? parsedBackgroundOptions
             : null;
 
         // 准备皮肤数据
@@ -259,7 +259,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
             skinData,
             modelType,
             defaultGenerateOptions,
-  finalBackgroundOptions
+            finalBackgroundOptions
         );
         res.set({
             'Content-Type': 'image/png',
@@ -344,7 +344,7 @@ app.get('/api/generate/:modelType/:method/:username', async (req, res) => {
         // 只有当提供了背景相关参数时才生成背景
         // 检查是否有任何背景参数被明确设置（不是默认值）
         const hasBackgroundParams = req.query.angle || req.query.colors || req.query.stripes || req.query.vignette;
-        
+
         const backgroundOptions = hasBackgroundParams ? {
             angle: Math.max(0, Math.min(360, parseInt(angle) || 45)),
             colors: JSON.parse(colors),
