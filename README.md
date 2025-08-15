@@ -2,7 +2,7 @@
 
 基于 Node.js 的 Minecraft 头像生成器 API 服务。
 
-<div algin="center"> [接口文档](#API 接口文档) </div>
+[接口文档](#API 接口文档)
 
 ## 特性
 
