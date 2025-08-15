@@ -81,7 +81,6 @@ function fillCanvasRegion(canvas, color, x = 0, y = 0, width = null, height = nu
 // 躯干主色处理
 function processTorso(torsoCanvas) {
     // 直接在原canvas上处理
-    const context = torsoCanvas.getContext('2d');
     const rowCount = 3, columnCount = 2;
     const partWidth = Math.floor(torsoCanvas.width / columnCount);
     const partHeight = Math.floor(torsoCanvas.height / rowCount);

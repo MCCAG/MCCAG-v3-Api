@@ -14,28 +14,19 @@ export class Logger {
 
     static log(module, message, data = null) {
         const time = this.formatTime();
-        if (data) {
-            console.log(`[${time}] [${module}] ${message}`, data);
-        } else {
-            console.log(`[${time}] [${module}] ${message}`);
-        }
+        if (data) console.log(`[${time}] [${module}] ${message}`, data);
+        else console.log(`[${time}] [${module}] ${message}`);
     }
 
     static error(module, message, error = null) {
         const time = this.formatTime();
-        if (error) {
-            console.error(`[${time}] [${module}] ${message}`, error.message || error);
-        } else {
-            console.error(`[${time}] [${module}] ${message}`);
-        }
+        if (error) console.error(`[${time}] [${module}] ${message}`, error.message || error);
+        else console.error(`[${time}] [${module}] ${message}`);
     }
 
     static warn(module, message, data = null) {
         const time = this.formatTime();
-        if (data) {
-            console.warn(`[${time}] [${module}] ${message}`, data);
-        } else {
-            console.warn(`[${time}] [${module}] ${message}`);
-        }
+        if (data) console.warn(`[${time}] [${module}] ${message}`, data);
+        else console.warn(`[${time}] [${module}] ${message}`);
     }
 }

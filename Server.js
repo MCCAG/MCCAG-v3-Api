@@ -1,11 +1,11 @@
-import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import express from 'express';
 import { createCanvas, loadImage } from 'canvas';
 
+import { Logger } from './Scripts/Logger.js';
 import { fetchMojangProfile, fetchSkinWebsiteProfile } from './Scripts/Network.js';
 import { renderAvatar, renderBackground, regulateAvatar } from './Scripts/Index.js';
-import { Logger } from './Scripts/Logger.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,13 +13,12 @@ const port = process.env.PORT || 3000;
 // 请求日志中间件
 app.use((req, res, next) => {
     const startTime = Date.now();
-
-    Logger.log('Server', `${req.method} ${req.url}`);
-
+    const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || '';
+    Logger.log('Server', `(${ip}) ${req.method} ${req.url}`);
     // 记录响应时间
     res.on('finish', () => {
         const duration = Date.now() - startTime;
-        Logger.log('Server', `${res.statusCode} - ${duration}ms`);
+        Logger.log('Server', `(${ip}) ${res.statusCode} - ${duration}ms ${req.url}`);
     });
 
     next();
@@ -45,22 +44,20 @@ async function getSkinImage(method, data) {
     try {
         switch (method) {
             case 'mojang':
-                Logger.log('SkinLoader', `Mojang模式 - 用户名: ${data.username}`);
+                Logger.log('SkinLoader', `Mojang模式 - 用户名 ${data.username}`);
                 const profile = await fetchMojangProfile(data.username);
                 if (!profile) {
-                    Logger.error('SkinLoader', `未找到玩家信息: ${data.username}`);
+                    Logger.error('SkinLoader', `未找到玩家信息 ${data.username}`);
                     throw new Error('未找到该玩家信息');
                 }
-                Logger.log('SkinLoader', `找到玩家: ${profile.name}`);
-
                 try {
                     const textureResponse = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${profile.id}?unsigned=false`);
                     if (!textureResponse.ok)
-                        throw new Error(`获取纹理信息失败: ${textureResponse.status}`);
+                        throw new Error(`获取纹理信息失败 ${textureResponse.status}`);
 
                     const textureData = await textureResponse.json();
                     if (!textureData.properties || !textureData.properties[0])
-                        throw new Error('纹理数据不存在');
+                        throw new Error('纹理数据不存在！');
 
                     const textureInfo = JSON.parse(Buffer.from(textureData.properties[0].value, 'base64').toString());
                     const skinUrl = textureInfo.textures.SKIN.url;
@@ -75,7 +72,7 @@ async function getSkinImage(method, data) {
 
             case 'website':
                 Logger.log('SkinLoader', `皮肤站模式 - ${data.website}/${data.username}`);
-                const website = 'https://' + data.website;
+                const website = data.website.startsWith('https://') ? data.website : 'https://' + data.website;
 
                 try {
                     const skinData = await fetchSkinWebsiteProfile(website, data.username);
@@ -279,7 +276,7 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
 
 // 获取支持的模型类型
 app.get('/api/models', (_req, res) => {
-    res.json({
+    res.status(200).json({
         models: [
             {
                 type: 'minimal',
@@ -355,7 +352,7 @@ app.use((_req, res) => {
 
 // 启动服务器
 app.listen(port, () => {
-    Logger.log('Server', `服务器启动 - 端口: ${port}`);
+    Logger.log('Server', `服务器启动 - http://0.0.0.0:${port}`);
 
     // 定期内存监控（每5分钟）
     setInterval(() => {
