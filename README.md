@@ -2,19 +2,25 @@
 
 基于 Node.js 的 Minecraft 头像生成器 API 服务。
 
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/users/YOUR_USERNAME/packages/container/package/minecraft-cute-avatar-generator-api)
+[![Node.js](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
+
 [接口文档](https://github.com/MCCAG/MCCAG-v3-Api#api-%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3)
 
 ## 特性
 
-- ✅ 完整的 Minecraft 头像渲染功能。
-- ✅ 多种渲染风格（简约、复古、侧面）。
-- ✅ 支持多种皮肤来源（Mojang、皮肤站、上传、URL）。
-- ✅ 支持POST和GET两种API调用方式。
-- ✅ 智能背景生成（根据参数自动决定透明或带背景）。
-- ✅ 可自定义生成选项和背景样式。
-- ✅ 文件大小限制和类型验证。
-- ✅ 内存存储，不写入磁盘。
-- ✅ 完整的错误处理和日志记录。
+- ✅ 完整的 Minecraft 头像渲染功能
+- ✅ 多种渲染风格（简约、复古、侧面）
+- ✅ 支持多种皮肤来源（Mojang、皮肤站、上传、URL）
+- ✅ 支持POST和GET两种API调用方式
+- ✅ 智能背景生成（根据参数自动决定透明或带背景）
+- ✅ 可自定义生成选项和背景样式
+- ✅ 文件大小限制和类型验证
+- ✅ 内存存储，不写入磁盘
+- ✅ 完整的错误处理和日志记录
+- 🐳 Docker 支持，一键部署
+- 🚀 GitHub Actions 自动构建镜像
 
 ## 项目结构
 
@@ -22,7 +28,7 @@
 ├── Server.js              # 主服务器文件
 ├── Scripts/
 │   ├── Network.js         # 网络请求模块
-│   ├── Renderers/         # 渲染器模块
+│   ├── Logger.js          # 日志格式化工具
 │   ├── Index.js           # 入口文件
 │   ├── Data.js            # 皮肤数据定义
 │   ├── Image.js           # 图像处理工具
@@ -32,17 +38,41 @@
 └── README.md              # 项目说明
 ```
 
-## 安装依赖
+## 快速开始
+
+### 🐳 Docker 部署（推荐）
+
+使用 Docker 是最简单的部署方式，无需安装 Node.js 和系统依赖：
+
+```bash
+# 拉取最新镜像
+docker pull ghcr.io/Lonely-Sails/minecraft-cute-avatar-generator-api:latest
+
+# 运行容器
+docker run -d \
+  --name minecraft-avatar-api \
+  -p 3000:3000 \
+  ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:latest
+
+# 检查服务状态
+curl http://localhost:3000/health
+```
+
+### 📦 本地开发
+
+如果你想本地开发或自定义部署：
+
+#### 安装依赖
 
 ```bash
 pnpm install
 ```
 
-### Canvas 安装问题解决方案
+#### Canvas 安装问题解决方案
 
 如果 Canvas 安装失败，请根据你的系统安装相应依赖：
 
-**macOS:**
+##### macOS
 
 ```bash
 # 使用 Homebrew 安装系统依赖
@@ -52,7 +82,7 @@ brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman
 pnpm install
 ```
 
-**Ubuntu/Debian:**
+##### Ubuntu/Debian
 
 ```bash
 # 安装系统依赖
@@ -62,12 +92,12 @@ sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev l
 pnpm install
 ```
 
-**Windows:**
+##### Windows
 
 - 推荐使用 WSL2 或 Docker 运行项目
 - 或者安装 Visual Studio Build Tools
 
-## 启动服务器
+#### 启动服务器
 
 ```bash
 # 生产环境
@@ -83,13 +113,13 @@ pnpm run dev
 
 检查服务器运行状态。
 
-**请求**
+#### 请求
 
 ```http
 GET /health
 ```
 
-**响应**
+#### 响应
 
 ```json
 {
@@ -118,14 +148,14 @@ GET /health
 
 #### POST
 
-**请求**
+##### 请求
 
 ```http
 POST /api/generate
 Content-Type: application/json 或 multipart/form-data
 ```
 
-**参数**
+##### 参数
 
 | 参数名              | 类型          | 必填     | 说明                                                    |
 | ------------------- | ------------- | -------- | ------------------------------------------------------- |
@@ -138,7 +168,7 @@ Content-Type: application/json 或 multipart/form-data
 | `generateOptions`   | string/object | ❌       | 生成选项（JSON 字符串或对象）                           |
 | `backgroundOptions` | string/object | ❌       | 背景选项（JSON 字符串或对象，为空时生成透明背景）       |
 
-**generateOptions 参数**
+##### generateOptions 参数
 
 | 参数名    | 类型    | 默认值    | 说明                                                |
 | --------- | ------- | --------- | --------------------------------------------------- |
@@ -149,7 +179,7 @@ Content-Type: application/json 或 multipart/form-data
 | `color`   | string  | `#FFFFFF` | 边框颜色（仅 vintage 模式）                         |
 | `border`  | number  | `1`       | 边框粗细：0-50（仅 vintage 模式）                   |
 
-**backgroundOptions 参数**
+##### backgroundOptions 参数
 
 | 参数名     | 类型   | 默认值                   | 说明                               |
 | ---------- | ------ | ------------------------ | ---------------------------------- |
@@ -159,9 +189,9 @@ Content-Type: application/json 或 multipart/form-data
 | `vignette` | number | `30`                     | 暗角强度：0-100（仅 vintage 模式） |
 | `image`    | object | `null`                   | 自定义背景图片                     |
 
-> 若未填写 `backgroundOptions` 参数，则默认不生成背。GET 请求同理。
+> 若未填写 `backgroundOptions` 参数，则默认不生成背景。GET 请求同理。
 
-**响应**
+##### 响应
 
 - **成功**: 返回 PNG 图片文件（Content-Type: image/png）
 - **失败**: 返回 JSON 错误信息
@@ -172,13 +202,13 @@ Content-Type: application/json 或 multipart/form-data
 
 通过URL参数快速生成头像，适合直接在浏览器中访问或嵌入到网页中。
 
-**请求**
+##### 请求
 
 ```http
 GET /api/generate/{modelType}/{method}/{username}
 ```
 
-**路径参数**
+##### 路径参数
 
 | 参数名      | 类型   | 必填 | 说明                                            |
 | ----------- | ------ | ---- | ----------------------------------------------- |
@@ -186,7 +216,7 @@ GET /api/generate/{modelType}/{method}/{username}
 | `method`    | string | ✅   | 皮肤获取方式：`mojang`、`website`、`url`        |
 | `username`  | string | ✅   | 玩家用户名（url模式时此参数被忽略）             |
 
-**查询参数**
+##### 查询参数
 
 | 参数名     | 类型   | 默认值                   | 说明                                                    |
 | ---------- | ------ | ------------------------ | ------------------------------------------------------- |
@@ -202,12 +232,12 @@ GET /api/generate/{modelType}/{method}/{username}
 | `stripes`  | number | `5`                      | 条纹数量：1-20（提供任一背景参数时生成背景）            |
 | `vignette` | number | `30`                     | 暗角强度：0-100（提供任一背景参数时生成背景）           |
 
-**响应**
+##### 响应
 
 - **成功**: 返回 PNG 图片文件（Content-Type: image/png）
 - **失败**: 返回 JSON 错误信息
 
-**示例**
+##### 示例
 
 ```bash
 # 基础用法 - 生成透明背景头像
@@ -229,13 +259,13 @@ curl "http://localhost:3000/api/generate/side/url/ignored?skinUrl=https://exampl
 
 获取所有支持的头像渲染模型及其配置选项。
 
-**请求**
+#### 请求
 
 ```http
 GET /api/models
 ```
 
-**响应**
+#### 响应
 
 ```json
 {
@@ -287,7 +317,7 @@ GET /api/models
 }
 ```
 
-**常见错误码**
+#### 常见错误码
 
 | HTTP 状态码 | 错误类型       | 说明                        |
 | ----------- | -------------- | --------------------------- |
@@ -422,10 +452,12 @@ curl -X POST http://localhost:3000/api/generate \
 API 会根据 `backgroundOptions` 参数自动决定是否生成背景：
 
 ### POST 模式
+
 - **生成背景**: 当 `backgroundOptions` 包含任何属性时
 - **透明背景**: 当 `backgroundOptions` 为空对象 `{}` 或未提供时
 
-### GET 模式  
+### GET 模式
+
 - **生成背景**: 当URL中提供任何背景参数（`angle`、`colors`、`stripes`、`vignette`）时
 - **透明背景**: 当URL中未提供任何背景参数时
 
@@ -475,41 +507,126 @@ pnpm start
 
 ## 部署
 
-### Docker 部署
+### 🐳 Docker 部署
 
-创建 `Dockerfile`：
+#### 使用预构建镜像（推荐）
 
-```dockerfile
-FROM node:18-alpine
-
-# 安装 Canvas 依赖
-RUN apk add --no-cache \
-    cairo-dev \
-    pango-dev \
-    jpeg-dev \
-    giflib-dev \
-    librsvg-dev \
-    pixman-dev \
-    pkgconfig
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
-```
-
-构建和运行：
+每次发布新版本时，GitHub Actions 会自动构建并推送 Docker 镜像到 GitHub Container Registry：
 
 ```bash
-# 构建镜像
-docker build -t minecraft-avatar-server .
+# 拉取最新版本
+docker pull ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:latest
+
+# 或拉取指定版本
+docker pull ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:v1.0.1
 
 # 运行容器
-docker run -p 3000:3000 minecraft-avatar-server
+docker run -d \
+  --name minecraft-avatar-api \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:latest
+```
+
+#### 自定义构建
+
+如果你需要自定义构建：
+
+```bash
+# 克隆仓库
+git clone https://github.com/YOUR_USERNAME/minecraft-cute-avatar-generator-api.git
+cd minecraft-cute-avatar-generator-api
+
+# 构建镜像
+docker build -t minecraft-avatar-api .
+
+# 运行容器
+docker run -d \
+  --name minecraft-avatar-api \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  minecraft-avatar-api
+```
+
+#### Docker Compose
+
+创建 `docker-compose.yml`：
+
+```yaml
+version: '3.8'
+
+services:
+  minecraft-avatar-api:
+    image: ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:latest
+    container_name: minecraft-avatar-api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+运行：
+
+```bash
+docker-compose up -d
+```
+
+### 🚀 自动化部署
+
+项目包含 GitHub Actions workflow，会在以下情况自动构建 Docker 镜像：
+
+- 创建新的 Release 时
+- 支持多架构构建（amd64/arm64）
+- 自动推送到 GitHub Container Registry
+- 生成多种版本标签
+
+#### 发布新版本
+
+1. 更新 `package.json` 中的版本号
+2. 提交并推送代码
+3. 在 GitHub 上创建新的 Release
+4. GitHub Actions 会自动构建并推送 Docker 镜像
+
+### 🔧 传统部署
+
+如果你不使用 Docker，也可以直接在服务器上部署：
+
+```bash
+# 安装 Node.js 18+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 安装系统依赖
+sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
+# 克隆项目
+git clone https://github.com/YOUR_USERNAME/minecraft-cute-avatar-generator-api.git
+cd minecraft-cute-avatar-generator-api
+
+# 安装依赖
+npm install -g pnpm
+pnpm install
+
+# 启动服务
+pnpm start
+```
+
+### 🔍 健康检查
+
+部署完成后，可以通过以下方式检查服务状态：
+
+```bash
+# 检查服务健康状态
+curl http://localhost:3000/health
+
+# 测试头像生成
+curl "http://localhost:3000/api/generate/minimal/mojang/Notch" --output test-avatar.png
 ```
