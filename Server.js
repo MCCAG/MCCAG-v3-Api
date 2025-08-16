@@ -15,20 +15,6 @@ const avatarCache = initializeCache(config);
 const app = express();
 const version = '1.0.2';
 
-// 请求日志中间件
-app.use((req, res, next) => {
-    const startTime = Date.now();
-    const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || '';
-    Logger.log('Server', `(${ip}) ${req.method} ${req.url}`);
-    // 记录响应时间
-    res.on('finish', () => {
-        const duration = Date.now() - startTime;
-        Logger.log('Server', `(${ip}) ${res.statusCode} - ${duration}ms ${req.url}`);
-    });
-
-    next();
-});
-
 // 中间件
 app.use(cors());
 app.use(express.json());
@@ -537,6 +523,30 @@ app.post('/api/cache/cleanup', async (_req, res) => {
             message: '缓存清理失败'
         });
     }
+});
+
+// 请求日志中间件
+app.use((req, res, next) => {
+    const startTime = Date.now();
+    const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || '';
+    Logger.log('Server', `(${ip}) ${req.method} ${req.url}`);
+    // 记录响应时间
+    res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        Logger.log('Server', `(${ip}) ${res.statusCode} - ${duration}ms ${req.url}`);
+    });
+
+    next();
+});
+
+// Token 验证中间件
+app.use((req, _res, next) => {
+    if (config.apiToken || config.cacheApiToken) {
+        const token = req.headers['x-api-token'] || req.query.token || req.body.token;
+        if (config.apiToken && config.apiToken != token) throw new Error('无效的 API Token 请检查！');
+        else if (config.cacheApiToken && req.url.includes('cache') && config.cacheApiToken != token) throw new Error('无效的 API Token 请检查！');
+    }
+    next();
 });
 
 // 错误处理中间件

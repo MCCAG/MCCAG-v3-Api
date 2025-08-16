@@ -4,9 +4,9 @@ export const config = {
     port: 3000,
 
     // 服务器 token 若留空则无需填写，对所有接口均有用
-    api_token: null,
-    // 缓存 api token 仅对缓存接口有用
-    cache_api_token: null,
+    apiToken: 'null',
+    // 缓存 api token 仅对缓存接口有用，若设置了 apiToken 则以 apiToken 为准
+    cacheApiToken: null,
 
     // 是否启用缓存
     cacheEnabled: true,
@@ -33,6 +33,8 @@ export const config = {
 
 // 根据环境变量覆盖配置
 if (process.env.PORT) config.port = parseInt(process.env.PORT);
+if (process.env.API_TOKEN) config.apiToken = process.env.API_TOKEN;
+if (process.env.CACHE_API_TOKEN) config.cacheApiToken = process.env.CACHE_API_TOKEN;
 if (process.env.CACHE_DISABLED === 'true') config.cacheEnabled = false;
 if (process.env.CACHE_MAX_AGE) config.cacheMaxAge = parseInt(process.env.CACHE_MAX_AGE) * 1000;
 if (process.env.CACHE_MAX_SIZE) config.cacheMaxSize = parseInt(process.env.CACHE_MAX_SIZE) * 1024 * 1024;
