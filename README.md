@@ -9,9 +9,9 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 [![Node.js](https://img.shields.io/badge/node.js-6DA55F)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-**[接口文档](https://github.com/MCCAG/MCCAG-v3-Api#api-接口文档)**
+**[接口文档](#api-接口文档)**
 
-**[公用 API 列表](https://github.com/MCCAG/MCCAG-v3-Api#🙏-使用公用-API)**
+**[公用 API 列表](#🙏-使用公用-API)**
 
 </div>
 
@@ -59,7 +59,7 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 
 - https://x.xzt.plus/ 提供者 [LoosePrince](https://github.com/LoosePrince)
 
-> [!CAUTION]
+> [!WARNING]
 > 但同时，这些 API 由贡献者提供，作者无法保证其可用性，并且对于其带来的所有问题都与作者无关。但无论如何，都感谢贡献者们的贡献。
 
 ### 🐳 Docker 部署
