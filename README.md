@@ -2,9 +2,10 @@
 
 基于 Node.js 的 Minecraft 头像生成器 API 服务。
 
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/users/YOUR_USERNAME/packages/container/package/minecraft-cute-avatar-generator-api)
-[![Node.js](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg)](https://github.com/users/YOUR_USERNAME/packages/container/package/minecraft-cute-avatar-generator-api)
+[![Node.js](https://img.shields.io/badge/node.js-6DA55F)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 
 [接口文档](https://github.com/MCCAG/MCCAG-v3-Api#api-%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3)
 
@@ -13,7 +14,7 @@
 - ✅ 完整的 Minecraft 头像渲染功能
 - ✅ 多种渲染风格（简约、复古、侧面）
 - ✅ 支持多种皮肤来源（Mojang、皮肤站、上传、URL）
-- ✅ 支持POST和GET两种API调用方式
+- ✅ 支持 POST 和 GET 两种 API 调用方式
 - ✅ 智能背景生成（根据参数自动决定透明或带背景）
 - ✅ 可自定义生成选项和背景样式
 - ✅ 文件大小限制和类型验证
@@ -143,7 +144,7 @@ GET /health
 
 > [!TIP]
 > 有两种方式可以生成头像，你可以根据自己的需求来选择。
-> 
+>
 > 但请注意 POST 支持 Upload 上传皮肤，但是不支持 Url 获取皮肤；而 GET 不支持 Upload 但支持 Url 方式。
 
 #### POST
@@ -157,16 +158,16 @@ Content-Type: application/json 或 multipart/form-data
 
 ##### 参数
 
-| 参数名              | 类型          | 必填     | 说明                                                    |
-| ------------------- | ------------- | -------- | ------------------------------------------------------- |
-| `method`            | string        | ✅       | 皮肤获取方式：`mojang`、`website`、`upload`、`url`      |
-| `username`          | string        | 条件必填 | 玩家用户名（mojang/website 模式时必填）                 |
-| `website`           | string        | 条件必填 | 皮肤站地址（website 模式时必填，不含 https://）         |
-| `skin`              | file          | 条件必填 | 皮肤文件（upload 模式时必填，最大 2MB）                 |
-| `skinUrl`           | string        | 条件必填 | 皮肤图片链接（url 模式时必填）                          |
-| `modelType`         | string        | ❌       | 模型类型，默认 `minimal`                                |
-| `generateOptions`   | string/object | ❌       | 生成选项（JSON 字符串或对象）                           |
-| `backgroundOptions` | string/object | ❌       | 背景选项（JSON 字符串或对象，为空时生成透明背景）       |
+| 参数名              | 类型          | 必填     | 说明                                               |
+| ------------------- | ------------- | -------- | -------------------------------------------------- |
+| `method`            | string        | ✅       | 皮肤获取方式：`mojang`、`website`、`upload`、`url` |
+| `username`          | string        | 条件必填 | 玩家用户名（mojang/website 模式时必填）            |
+| `website`           | string        | 条件必填 | 皮肤站地址（website 模式时必填，不含 https://）    |
+| `skin`              | file          | 条件必填 | 皮肤文件（upload 模式时必填，最大 2MB）            |
+| `skinUrl`           | string        | 条件必填 | 皮肤图片链接（url 模式时必填）                     |
+| `modelType`         | string        | ❌       | 模型类型，默认 `minimal`                           |
+| `generateOptions`   | string/object | ❌       | 生成选项（JSON 字符串或对象）                      |
+| `backgroundOptions` | string/object | ❌       | 背景选项（JSON 字符串或对象，为空时生成透明背景）  |
 
 ##### generateOptions 参数
 
@@ -200,7 +201,7 @@ Content-Type: application/json 或 multipart/form-data
 
 #### GET
 
-通过URL参数快速生成头像，适合直接在浏览器中访问或嵌入到网页中。
+通过 URL 参数快速生成头像，适合直接在浏览器中访问或嵌入到网页中。
 
 ##### 请求
 
@@ -210,27 +211,27 @@ GET /api/generate/{modelType}/{method}/{username}
 
 ##### 路径参数
 
-| 参数名      | 类型   | 必填 | 说明                                            |
-| ----------- | ------ | ---- | ----------------------------------------------- |
-| `modelType` | string | ✅   | 模型类型：`minimal`、`vintage`、`side`          |
-| `method`    | string | ✅   | 皮肤获取方式：`mojang`、`website`、`url`        |
-| `username`  | string | ✅   | 玩家用户名（url模式时此参数被忽略）             |
+| 参数名      | 类型   | 必填 | 说明                                     |
+| ----------- | ------ | ---- | ---------------------------------------- |
+| `modelType` | string | ✅   | 模型类型：`minimal`、`vintage`、`side`   |
+| `method`    | string | ✅   | 皮肤获取方式：`mojang`、`website`、`url` |
+| `username`  | string | ✅   | 玩家用户名（url 模式时此参数被忽略）     |
 
 ##### 查询参数
 
-| 参数名     | 类型   | 默认值                   | 说明                                                    |
-| ---------- | ------ | ------------------------ | ------------------------------------------------------- |
-| `scale`    | number | `100`                    | 图片缩放比例：50-200                                    |
-| `shadow`   | number | `50`                     | 阴影深度：0-100                                         |
-| `texture`  | string | `true`                   | 是否启用纹理：`true`/`false`（仅side模式）              |
-| `color`    | string | `#FFFFFF`                | 边框颜色（仅vintage模式）                               |
-| `border`   | number | `1`                      | 边框粗细：0-50（仅vintage模式）                         |
-| `type`     | string | `head`                   | 生成类型：`head`、`half`、`full`（仅minimal模式）       |
-| `skinUrl`  | string | -                        | 皮肤图片链接（仅url模式时必填）                         |
-| `angle`    | number | `45`                     | 背景渐变角度：0-360（提供任一背景参数时生成背景）       |
-| `colors`   | string | `["#87CEEB", "#FFB6C1"]` | 背景颜色数组JSON字符串（提供任一背景参数时生成背景）    |
-| `stripes`  | number | `5`                      | 条纹数量：1-20（提供任一背景参数时生成背景）            |
-| `vignette` | number | `30`                     | 暗角强度：0-100（提供任一背景参数时生成背景）           |
+| 参数名     | 类型   | 默认值                   | 说明                                                   |
+| ---------- | ------ | ------------------------ | ------------------------------------------------------ |
+| `scale`    | number | `100`                    | 图片缩放比例：50-200                                   |
+| `shadow`   | number | `50`                     | 阴影深度：0-100                                        |
+| `texture`  | string | `true`                   | 是否启用纹理：`true`/`false`（仅 side 模式）           |
+| `color`    | string | `#FFFFFF`                | 边框颜色（仅 vintage 模式）                            |
+| `border`   | number | `1`                      | 边框粗细：0-50（仅 vintage 模式）                      |
+| `type`     | string | `head`                   | 生成类型：`head`、`half`、`full`（仅 minimal 模式）    |
+| `skinUrl`  | string | -                        | 皮肤图片链接（仅 url 模式时必填）                      |
+| `angle`    | number | `45`                     | 背景渐变角度：0-360（提供任一背景参数时生成背景）      |
+| `colors`   | string | `["#87CEEB", "#FFB6C1"]` | 背景颜色数组 JSON 字符串（提供任一背景参数时生成背景） |
+| `stripes`  | number | `5`                      | 条纹数量：1-20（提供任一背景参数时生成背景）           |
+| `vignette` | number | `30`                     | 暗角强度：0-100（提供任一背景参数时生成背景）          |
 
 ##### 响应
 
@@ -361,7 +362,7 @@ curl -X POST http://localhost:3000/api/generate \
   --output avatar.png
 ```
 
-#### 4. 使用皮肤URL生成头像
+#### 4. 使用皮肤 URL 生成头像
 
 ```bash
 curl -X POST http://localhost:3000/api/generate \
@@ -458,8 +459,8 @@ API 会根据 `backgroundOptions` 参数自动决定是否生成背景：
 
 ### GET 模式
 
-- **生成背景**: 当URL中提供任何背景参数（`angle`、`colors`、`stripes`、`vignette`）时
-- **透明背景**: 当URL中未提供任何背景参数时
+- **生成背景**: 当 URL 中提供任何背景参数（`angle`、`colors`、`stripes`、`vignette`）时
+- **透明背景**: 当 URL 中未提供任何背景参数时
 
 ### 示例对比
 
@@ -515,10 +516,10 @@ pnpm start
 
 ```bash
 # 拉取最新版本
-docker pull ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:latest
+docker pull ghcr.io/mccag/mccag-v3-api:latest
 
 # 或拉取指定版本
-docker pull ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:v1.0.1
+docker pull ghcr.io/mccag/mccag-v3-api:v1.0.1
 
 # 运行容器
 docker run -d \
@@ -553,7 +554,7 @@ docker run -d \
 创建 `docker-compose.yml`：
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   minecraft-avatar-api:
