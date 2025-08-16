@@ -4,7 +4,7 @@ export const config = {
     port: 3000,
 
     // 服务器 token 若留空则无需填写，对所有接口均有用
-    apiToken: 'null',
+    apiToken: null,
     // 缓存 api token 仅对缓存接口有用，若设置了 apiToken 则以 apiToken 为准
     cacheApiToken: null,
 

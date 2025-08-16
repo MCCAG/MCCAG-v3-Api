@@ -186,6 +186,30 @@ async function generateAvatarImageDirect(method, skinData, modelType, generateOp
 }
 
 
+// 请求日志验证中间件
+app.use((req, res, next) => {
+    const startTime = Date.now();
+    const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || 'Unknown IP';
+    Logger.log('Server', `(${ip}) ${req.method} ${req.url}`);
+    // 记录响应时间
+    res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        Logger.log('Server', `(${ip}) ${res.statusCode} - ${duration}ms ${req.url}`);
+    });
+    if (config.apiToken || config.cacheApiToken) {
+        const token = (req.headers['x-api-token'] || req.query.token || req.body.token) ?? '';
+        if ((config.apiToken && config.apiToken != token) || (config.cacheApiToken && req.url.includes('cache') && config.cacheApiToken != token)) {
+            res.status(502).json({
+                success: false,
+                message: '无效的 API Token 请检查！'
+            });
+            return;
+        }
+    }
+    next();
+});
+
+
 app.get('/health', async (_req, res) => {
     const memoryUsage = process.memoryUsage();
     const uptime = process.uptime();
@@ -314,12 +338,11 @@ app.post('/api/generate', upload.single('skin'), async (req, res) => {
 
     } catch (error) {
         // 特殊处理JSON解析错误
-        if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        if (error instanceof SyntaxError && error.message.includes('JSON'))
             return res.status(400).json({
                 success: false,
                 message: '选项格式错误，请提供有效的 JSON'
             });
-        }
         handleApiError(error, res, 'Generator');
     }
 });
@@ -398,14 +421,9 @@ app.get('/api/generate/:modelType/:method/:username', async (req, res) => {
 
         // 准备皮肤数据
         let skinData;
-        if (method === 'url') {
-            skinData = { skinUrl };
-        } else if (method === 'website') {
-            // 对于GET模式，website默认为minecraft.net
-            skinData = { username, website: 'minecraft.net' };
-        } else {
-            skinData = { username };
-        }
+        if (method === 'url') skinData = { skinUrl };
+        else if (method === 'website') skinData = { username, website: 'minecraft.net' };
+        else skinData = { username };
 
         // 生成头像图片
         const buffer = await generateAvatarImage(
@@ -523,30 +541,6 @@ app.post('/api/cache/cleanup', async (_req, res) => {
             message: '缓存清理失败'
         });
     }
-});
-
-// 请求日志中间件
-app.use((req, res, next) => {
-    const startTime = Date.now();
-    const ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || '';
-    Logger.log('Server', `(${ip}) ${req.method} ${req.url}`);
-    // 记录响应时间
-    res.on('finish', () => {
-        const duration = Date.now() - startTime;
-        Logger.log('Server', `(${ip}) ${res.statusCode} - ${duration}ms ${req.url}`);
-    });
-
-    next();
-});
-
-// Token 验证中间件
-app.use((req, _res, next) => {
-    if (config.apiToken || config.cacheApiToken) {
-        const token = req.headers['x-api-token'] || req.query.token || req.body.token;
-        if (config.apiToken && config.apiToken != token) throw new Error('无效的 API Token 请检查！');
-        else if (config.cacheApiToken && req.url.includes('cache') && config.cacheApiToken != token) throw new Error('无效的 API Token 请检查！');
-    }
-    next();
 });
 
 // 错误处理中间件
