@@ -17,8 +17,6 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 
 基于 Node.js 的 Minecraft 头像生成器 API 服务，内置智能缓存系统，提供毫秒级响应速度。
 
-> ⚡ **新功能**: 智能双层缓存系统已上线！内存+磁盘缓存架构，缓存命中时响应速度提升 **100倍以上**，从几百毫秒降低到几毫秒。
-
 ## 特性
 
 - ✅ 完整的 Minecraft 头像渲染功能
@@ -28,8 +26,8 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 - ✅ 智能背景生成（根据参数自动决定透明或带背景）
 - ✅ 可自定义生成选项和背景样式
 - ✅ 文件大小限制和类型验证
-- ⚡ **智能缓存系统**（内存+磁盘双层缓存，大幅提升响应速度）
 - ✅ 完整的错误处理和日志记录
+- ⚡ 智能缓存系统（内存+磁盘双层缓存，大幅提升响应速度）
 - 🐳 Docker 支持，一键部署
 - 🚀 GitHub Actions 自动构建镜像
 
@@ -47,7 +45,7 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 │   ├── Minimal.js         # 简约风格渲染器
 │   ├── Vintage.js         # 复古风格渲染器
 │   └── Side.js            # 侧面风格渲染器
-├── cache.config.js        # 缓存配置文件
+├── Config.js              # 配置文件
 ├── CACHE_README.md        # 缓存系统详细文档
 └── README.md              # 项目说明
 ```
@@ -73,7 +71,7 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 
 ```bash
 # 拉取最新镜像
-docker pull ghcr.io/Lonely-Sails/minecraft-cute-avatar-generator-api:latest
+docker pull ghcr.io/mccag/mccag-v3-api:latest
 
 # 运行容器
 docker run -d \
@@ -132,12 +130,11 @@ pnpm start
 
 # 开发环境
 pnpm run dev
-
-# 测试缓存系统
-pnpm run test:cache
 ```
 
 ## API 接口文档
+
+> **安全提示**: 如果设置了 `API_TOKEN` 环境变量，所有 API 请求都需要在请求头中包含 `Authorization: <token>`。
 
 ### 1. 健康检查
 
@@ -147,6 +144,7 @@ pnpm run test:cache
 
 ```http
 GET /health
+Authorization: Bearer <token>  # 仅在设置了 API_TOKEN 或 CACHE_API_TOKEN 时需要
 ```
 
 #### 响应
@@ -188,6 +186,7 @@ GET /health
 ```http
 POST /api/generate
 Content-Type: application/json 或 multipart/form-data
+Authorization: Bearer <token>  # 仅在设置了 API_TOKEN 时需要
 ```
 
 ##### 参数
@@ -241,6 +240,7 @@ Content-Type: application/json 或 multipart/form-data
 
 ```http
 GET /api/generate/{modelType}/{method}/{username}
+Authorization: Bearer <token>  # 仅在设置了 API_TOKEN 时需要
 ```
 
 ##### 路径参数
@@ -298,6 +298,7 @@ curl "http://localhost:3000/api/generate/side/url/ignored?skinUrl=https://exampl
 
 ```http
 GET /api/cache/stats
+Authorization: Bearer <token>  # 需要 API_TOKEN 或 CACHE_API_TOKEN
 ```
 
 **响应示例：**
@@ -328,12 +329,14 @@ GET /api/cache/stats
 
 ```http
 DELETE /api/cache
+Authorization: Bearer <token>  # 需要 API_TOKEN 或 CACHE_API_TOKEN
 ```
 
 #### 手动触发缓存清理
 
 ```http
 POST /api/cache/cleanup
+Authorization: Bearer <token>  # 需要 API_TOKEN 或 CACHE_API_TOKEN
 ```
 
 ---
@@ -346,6 +349,7 @@ POST /api/cache/cleanup
 
 ```http
 GET /api/models
+Authorization: Bearer <token>  # 仅在设置了 API_TOKEN 时需要
 ```
 
 #### 响应
@@ -406,6 +410,8 @@ GET /api/models
 | ----------- | -------------- | --------------------------- |
 | 400         | 参数错误       | 缺少必填参数或参数格式错误  |
 | 400         | 文件太大       | 上传的皮肤文件超过 2MB 限制 |
+| 401         | 未授权访问     | 缺少或无效的 API 令牌       |
+| 403         | 访问被拒绝     | API 令牌验证失败            |
 | 404         | 玩家不存在     | 未找到指定的 Minecraft 玩家 |
 | 404         | 接口不存在     | 请求的 API 路径不存在       |
 | 500         | 生成头像失败   | 头像生成过程中发生错误      |
@@ -418,8 +424,16 @@ GET /api/models
 #### 1. 使用 Mojang 用户名生成头像（带背景）
 
 ```bash
+# 无令牌验证
 curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
+  -d '{"method": "mojang", "username": "Notch", "modelType": "minimal"}' \
+  --output avatar.png
+
+# 带令牌验证
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-token" \
   -d '{"method": "mojang", "username": "Notch", "modelType": "minimal"}' \
   --output avatar.png
 ```
@@ -569,14 +583,22 @@ curl "http://localhost:3000/api/generate/minimal/mojang/Notch?colors=[\"#FF6B6B\
 ### 缓存管理
 
 ```bash
-# 查看缓存统计信息
+# 查看缓存统计信息（无令牌）
 curl http://localhost:3000/api/cache/stats
 
+# 查看缓存统计信息（带令牌）
+curl -H "Authorization: Bearer your-token" \
+  http://localhost:3000/api/cache/stats
+
 # 手动触发缓存清理（清理过期缓存）
-curl -X POST http://localhost:3000/api/cache/cleanup
+curl -X POST \
+  -H "Authorization: Bearer your-token" \
+  http://localhost:3000/api/cache/cleanup
 
 # 清空所有缓存
-curl -X DELETE http://localhost:3000/api/cache
+curl -X DELETE \
+  -H "Authorization: Bearer your-token" \
+  http://localhost:3000/api/cache
 
 # 测试缓存系统
 npm run test:cache
@@ -616,54 +638,262 @@ npm start
 
 ### 环境变量
 
-| 变量名                   | 默认值 | 说明                         |
-| ------------------------ | ------ | ---------------------------- |
-| `PORT`                   | `3000` | 服务器监听端口               |
-| `CACHE_DISABLED`         | -      | 设置为 `true` 禁用缓存系统   |
-| `CACHE_MAX_AGE`          | `86400`| 缓存过期时间（秒）           |
-| `CACHE_MAX_SIZE`         | `100`  | 磁盘缓存最大大小（MB）       |
-| `CACHE_MAX_MEMORY_ITEMS` | `100`  | 内存缓存最大项目数           |
+| 变量名                   | 默认值  | 说明                                   |
+| ------------------------ | ------- | -------------------------------------- |
+| `PORT`                   | `3000`  | 服务器监听端口                         |
+| `API_TOKEN`              | -       | API 访问令牌，设置后所有接口都需要验证 |
+| `CACHE_API_TOKEN`        | -       | 缓存接口专用令牌，仅对缓存接口有效     |
+| `CACHE_DISABLED`         | -       | 设置为 `true` 禁用缓存系统             |
+| `CACHE_MAX_AGE`          | `86400` | 缓存过期时间（秒）                     |
+| `CACHE_MAX_SIZE`         | `100`   | 磁盘缓存最大大小（MB）                 |
+| `CACHE_MAX_MEMORY_ITEMS` | `100`   | 内存缓存最大项目数                     |
 
-### 缓存配置
+### API 安全配置
 
-缓存系统可以通过 `cache.config.js` 文件进行详细配置：
+为了保护你的 API 服务，可以设置访问令牌：
+
+#### 全局 API 令牌
+
+```bash
+# 设置全局 API 令牌，所有接口都需要验证
+export API_TOKEN="your-secret-token"
+```
+
+使用时需要在请求头中添加令牌：
+
+```bash
+# GET 请求
+curl -H "Authorization: Bearer your-secret-token" \
+  "http://localhost:3000/api/generate/minimal/mojang/Notch"
+
+# POST 请求
+curl -X POST \
+  -H "Authorization: Bearer your-secret-token" \
+  -H "Content-Type: application/json" \
+  -d '{"method": "mojang", "username": "Notch"}' \
+  http://localhost:3000/api/generate
+```
+
+#### 缓存接口专用令牌
+
+```bash
+# 仅对缓存管理接口设置令牌
+export CACHE_API_TOKEN="your-cache-token"
+```
+
+> **注意**: 如果同时设置了 `API_TOKEN` 和 `CACHE_API_TOKEN`，缓存接口将优先使用 `API_TOKEN`。
+
+### 完整配置文件
+
+项目使用 `Config.js` 文件进行配置管理：
 
 ```javascript
-export const cacheConfig = {
-    // 缓存目录
-    cacheDir: './cache',
-    
-    // 缓存过期时间（24小时）
-    maxAge: 24 * 60 * 60 * 1000,
-    
-    // 磁盘缓存最大大小（100MB）
-    maxSize: 100 * 1024 * 1024,
-    
-    // 内存缓存最大项目数
-    maxMemoryItems: 100,
-    
-    // 清理间隔（1小时）
-    cleanupInterval: 60 * 60 * 1000,
-    
-    // 是否启用缓存
-    enabled: true
+export const config = {
+  // 服务器配置
+  port: 3000,
+
+  // 安全配置
+  apiToken: null, // 全局 API 令牌
+  cacheApiToken: null, // 缓存接口专用令牌
+
+  // 缓存开关
+  cacheEnabled: true, // 是否启用缓存系统
+  cacheEnableMemoryCache: true, // 是否启用内存缓存
+  cacheEnableDiskCache: true, // 是否启用磁盘缓存
+
+  // 缓存配置
+  cacheDir: "./cache", // 缓存目录
+  cacheMaxAge: 24 * 60 * 60 * 1000, // 缓存过期时间（24小时）
+  cacheMaxSize: 100 * 1024 * 1024, // 磁盘缓存最大大小（100MB）
+  cacheMaxMemoryItems: 100, // 内存缓存最大项目数
+  cacheCleanupInterval: 60 * 60 * 1000, // 清理间隔（1小时）
 };
+
+// 环境变量自动覆盖配置
+if (process.env.PORT) config.port = parseInt(process.env.PORT);
+if (process.env.API_TOKEN) config.apiToken = process.env.API_TOKEN;
+if (process.env.CACHE_API_TOKEN)
+  config.cacheApiToken = process.env.CACHE_API_TOKEN;
+if (process.env.CACHE_DISABLED === "true") config.cacheEnabled = false;
+if (process.env.CACHE_MAX_AGE)
+  config.cacheMaxAge = parseInt(process.env.CACHE_MAX_AGE) * 1000;
+if (process.env.CACHE_MAX_SIZE)
+  config.cacheMaxSize = parseInt(process.env.CACHE_MAX_SIZE) * 1024 * 1024;
+if (process.env.CACHE_MAX_MEMORY_ITEMS)
+  config.cacheMaxMemoryItems = parseInt(process.env.CACHE_MAX_MEMORY_ITEMS);
+```
+
+#### 自定义配置示例
+
+如果你需要修改默认配置，可以直接编辑 `Config.js` 文件：
+
+```javascript
+// 生产环境配置示例
+export const config = {
+  port: 8080,
+  apiToken: "your-production-token",
+  cacheEnabled: true,
+  cacheMaxAge: 12 * 60 * 60 * 1000, // 12小时缓存
+  cacheMaxSize: 200 * 1024 * 1024, // 200MB磁盘缓存
+  cacheMaxMemoryItems: 200, // 200个内存缓存项
+  cacheCleanupInterval: 30 * 60 * 1000, // 30分钟清理一次
+};
+
+// 开发环境配置示例
+export const config = {
+  port: 3000,
+  apiToken: null, // 开发环境不需要令牌
+  cacheEnabled: false, // 开发时禁用缓存便于调试
+};
+```
+
+### 缓存系统配置
+
+缓存系统提供了灵活的配置选项：
+
+#### 缓存类型控制
+
+```bash
+# 仅启用内存缓存（重启后丢失，但速度最快）
+export CACHE_ENABLE_MEMORY_CACHE=true
+export CACHE_ENABLE_DISK_CACHE=false
+
+# 仅启用磁盘缓存（持久化，但速度较慢）
+export CACHE_ENABLE_MEMORY_CACHE=false
+export CACHE_ENABLE_DISK_CACHE=true
+
+# 双层缓存（推荐，兼顾速度和持久化）
+export CACHE_ENABLE_MEMORY_CACHE=true
+export CACHE_ENABLE_DISK_CACHE=true
+```
+
+#### 缓存大小和时间控制
+
+```bash
+# 设置缓存过期时间为12小时
+export CACHE_MAX_AGE=43200
+
+# 设置磁盘缓存最大为200MB
+export CACHE_MAX_SIZE=200
+
+# 设置内存缓存最多存储200个项目
+export CACHE_MAX_MEMORY_ITEMS=200
 ```
 
 ### 配置示例
 
+#### 开发环境配置
+
 ```bash
-# 设置端口
-export PORT=8080
-
-# 禁用缓存（适用于开发环境）
+# 开发环境 - 禁用缓存，便于调试
+export PORT=3000
 export CACHE_DISABLED=true
+export NODE_ENV=development
 
-# 设置缓存过期时间为12小时
-export CACHE_MAX_AGE=43200
+# 启动开发服务器
+pnpm run dev
+```
 
-# 启动服务器
+#### 生产环境配置
+
+```bash
+# 生产环境 - 启用安全令牌和优化缓存
+export PORT=3000
+export API_TOKEN="your-production-secret-token"
+export CACHE_MAX_AGE=43200        # 12小时缓存
+export CACHE_MAX_SIZE=200         # 200MB磁盘缓存
+export CACHE_MAX_MEMORY_ITEMS=200 # 200个内存缓存项
+export NODE_ENV=production
+
+# 启动生产服务器
 pnpm start
+```
+
+#### 高性能配置
+
+```bash
+# 高性能环境 - 大容量缓存配置
+export PORT=3000
+export CACHE_MAX_AGE=86400        # 24小时缓存
+export CACHE_MAX_SIZE=500         # 500MB磁盘缓存
+export CACHE_MAX_MEMORY_ITEMS=500 # 500个内存缓存项
+export CACHE_CLEANUP_INTERVAL=1800 # 30分钟清理一次
+
+pnpm start
+```
+
+#### 安全配置
+
+```bash
+# 安全环境 - 分离令牌管理
+export PORT=3000
+export API_TOKEN="main-api-secret-token"
+export CACHE_API_TOKEN="cache-management-token"
+
+pnpm start
+```
+
+#### Docker 环境配置
+
+```bash
+# Docker 部署配置
+docker run -d \
+  --name minecraft-avatar-api \
+  -p 3000:3000 \
+  -e API_TOKEN="your-docker-token" \
+  -e CACHE_MAX_SIZE=300 \
+  -e CACHE_MAX_AGE=86400 \
+  --restart unless-stopped \
+  ghcr.io/YOUR_USERNAME/minecraft-cute-avatar-generator-api:latest
+```
+
+## 安全配置
+
+### 🔐 API 令牌验证
+
+为了保护你的 API 服务免受未授权访问，可以配置访问令牌：
+
+#### 全局令牌保护
+
+```bash
+# 设置全局 API 令牌
+export API_TOKEN="your-secret-token-here"
+```
+
+设置后，所有 API 接口都需要在请求头中包含令牌：
+
+```bash
+curl -H "Authorization: Bearer your-secret-token-here" \
+  "http://localhost:3000/api/generate/minimal/mojang/Notch"
+```
+
+#### 缓存接口专用令牌
+
+```bash
+# 仅对缓存管理接口设置令牌
+export CACHE_API_TOKEN="your-cache-management-token"
+```
+
+这样可以将缓存管理权限与普通 API 使用权限分离。
+
+#### 令牌优先级
+
+- 如果同时设置了 `API_TOKEN` 和 `CACHE_API_TOKEN`，缓存接口将优先验证 `API_TOKEN`
+- 如果只设置了 `CACHE_API_TOKEN`，则只有缓存接口需要验证令牌
+- 如果都没设置，则所有接口都无需验证
+
+#### 安全建议
+
+- 使用强随机字符串作为令牌（建议 32 位以上）
+- 定期更换令牌
+- 在生产环境中务必设置令牌保护
+- 不要在代码中硬编码令牌，使用环境变量
+
+```bash
+# 生成安全令牌示例
+openssl rand -hex 32
+# 或者
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ## 缓存系统

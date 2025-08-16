@@ -197,7 +197,7 @@ app.use((req, res, next) => {
         Logger.log('Server', `(${ip}) ${res.statusCode} - ${duration}ms ${req.url}`);
     });
     if (config.apiToken || config.cacheApiToken) {
-        const token = (req.headers['x-api-token'] || req.query.token || req.body.token) ?? '';
+        const token = (req.headers['Authorization'].replace('Bearer ', '') || req.query.token || req.body.token) ?? '';
         if ((config.apiToken && config.apiToken != token) || (config.cacheApiToken && req.url.includes('cache') && config.cacheApiToken != token)) {
             res.status(502).json({
                 success: false,
