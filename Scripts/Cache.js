@@ -41,8 +41,7 @@ class AvatarCache {
             generateOptions,
             backgroundOptions
         };
-
-        const keyString = JSON.stringify(keyData, Object.keys(keyData).sort());
+        const keyString = JSON.stringify(keyData);
         return crypto.createHash('md5').update(keyString).digest('hex');
     }
 
@@ -103,7 +102,7 @@ class AvatarCache {
 
             if (oldestKey) {
                 this.memoryCache.delete(oldestKey);
-                Logger.log('Cache', `内存缓存已满，删除最久未访问项: ${oldestKey}`);
+                Logger.log('Cache', `内存缓存已满，删除最久未访问项：${oldestKey}`);
             }
         }
 
