@@ -139,3 +139,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 .kiro/
+
+# 缓存目录
+cache/
+test-cache/

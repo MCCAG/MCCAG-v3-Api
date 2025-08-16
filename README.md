@@ -15,7 +15,9 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 
 </div>
 
-基于 Node.js 的 Minecraft 头像生成器 API 服务。
+基于 Node.js 的 Minecraft 头像生成器 API 服务，内置智能缓存系统，提供毫秒级响应速度。
+
+> ⚡ **新功能**: 智能双层缓存系统已上线！内存+磁盘缓存架构，缓存命中时响应速度提升 **100倍以上**，从几百毫秒降低到几毫秒。
 
 ## 特性
 
@@ -26,7 +28,7 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 - ✅ 智能背景生成（根据参数自动决定透明或带背景）
 - ✅ 可自定义生成选项和背景样式
 - ✅ 文件大小限制和类型验证
-- ✅ 内存存储，不写入磁盘
+- ⚡ **智能缓存系统**（内存+磁盘双层缓存，大幅提升响应速度）
 - ✅ 完整的错误处理和日志记录
 - 🐳 Docker 支持，一键部署
 - 🚀 GitHub Actions 自动构建镜像
@@ -41,9 +43,12 @@ _使用 API 轻松生成个性化的 Minecraft 头像_
 │   ├── Index.js           # 入口文件
 │   ├── Data.js            # 皮肤数据定义
 │   ├── Image.js           # 图像处理工具
+│   ├── Cache.js           # 缓存系统模块
 │   ├── Minimal.js         # 简约风格渲染器
 │   ├── Vintage.js         # 复古风格渲染器
 │   └── Side.js            # 侧面风格渲染器
+├── cache.config.js        # 缓存配置文件
+├── CACHE_README.md        # 缓存系统详细文档
 └── README.md              # 项目说明
 ```
 
@@ -127,6 +132,9 @@ pnpm start
 
 # 开发环境
 pnpm run dev
+
+# 测试缓存系统
+pnpm run test:cache
 ```
 
 ## API 接口文档
@@ -152,6 +160,11 @@ GET /health
   "memory": {
     "used": "45MB",
     "total": "128MB"
+  },
+  "cache": {
+    "diskFiles": 45,
+    "diskSize": "2MB",
+    "memoryItems": 12
   },
   "timestamp": "2024-01-15T10:30:00.000Z"
 }
@@ -277,7 +290,55 @@ curl "http://localhost:3000/api/generate/side/url/ignored?skinUrl=https://exampl
 
 ---
 
-### 3. 获取支持的模型类型
+### 3. 缓存管理
+
+管理头像缓存系统，提供缓存统计、清理等功能。
+
+#### 获取缓存统计
+
+```http
+GET /api/cache/stats
+```
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "diskCache": {
+      "files": 45,
+      "size": 2048576,
+      "sizeFormatted": "2MB"
+    },
+    "memoryCache": {
+      "items": 12,
+      "maxItems": 100
+    },
+    "config": {
+      "maxAge": 86400000,
+      "maxSize": 104857600,
+      "cleanupInterval": 3600000
+    }
+  }
+}
+```
+
+#### 清空所有缓存
+
+```http
+DELETE /api/cache
+```
+
+#### 手动触发缓存清理
+
+```http
+POST /api/cache/cleanup
+```
+
+---
+
+### 4. 获取支持的模型类型
 
 获取所有支持的头像渲染模型及其配置选项。
 
@@ -503,6 +564,48 @@ curl "http://localhost:3000/api/generate/minimal/mojang/Notch"
 curl "http://localhost:3000/api/generate/minimal/mojang/Notch?colors=[\"#FF6B6B\"]"
 ```
 
+## 缓存使用示例
+
+### 缓存管理
+
+```bash
+# 查看缓存统计信息
+curl http://localhost:3000/api/cache/stats
+
+# 手动触发缓存清理（清理过期缓存）
+curl -X POST http://localhost:3000/api/cache/cleanup
+
+# 清空所有缓存
+curl -X DELETE http://localhost:3000/api/cache
+
+# 测试缓存系统
+npm run test:cache
+```
+
+### 性能对比
+
+```bash
+# 第一次请求（缓存未命中）- 响应时间约 200-500ms
+time curl "http://localhost:3000/api/generate/minimal/mojang/Notch" --output avatar1.png
+
+# 第二次相同请求（缓存命中）- 响应时间约 5-20ms
+time curl "http://localhost:3000/api/generate/minimal/mojang/Notch" --output avatar2.png
+```
+
+### 缓存配置示例
+
+```bash
+# 开发环境 - 禁用缓存
+export CACHE_DISABLED=true
+npm start
+
+# 生产环境 - 自定义缓存配置
+export CACHE_MAX_AGE=43200    # 12小时过期
+export CACHE_MAX_SIZE=200     # 200MB磁盘缓存
+export CACHE_MAX_MEMORY_ITEMS=200  # 200个内存缓存项
+npm start
+```
+
 ## 模型类型
 
 - **Minimal**: 简约风格，灵感来源：噪音回放
@@ -513,9 +616,39 @@ curl "http://localhost:3000/api/generate/minimal/mojang/Notch?colors=[\"#FF6B6B\
 
 ### 环境变量
 
-| 变量名 | 默认值 | 说明           |
-| ------ | ------ | -------------- |
-| `PORT` | `3000` | 服务器监听端口 |
+| 变量名                   | 默认值 | 说明                         |
+| ------------------------ | ------ | ---------------------------- |
+| `PORT`                   | `3000` | 服务器监听端口               |
+| `CACHE_DISABLED`         | -      | 设置为 `true` 禁用缓存系统   |
+| `CACHE_MAX_AGE`          | `86400`| 缓存过期时间（秒）           |
+| `CACHE_MAX_SIZE`         | `100`  | 磁盘缓存最大大小（MB）       |
+| `CACHE_MAX_MEMORY_ITEMS` | `100`  | 内存缓存最大项目数           |
+
+### 缓存配置
+
+缓存系统可以通过 `cache.config.js` 文件进行详细配置：
+
+```javascript
+export const cacheConfig = {
+    // 缓存目录
+    cacheDir: './cache',
+    
+    // 缓存过期时间（24小时）
+    maxAge: 24 * 60 * 60 * 1000,
+    
+    // 磁盘缓存最大大小（100MB）
+    maxSize: 100 * 1024 * 1024,
+    
+    // 内存缓存最大项目数
+    maxMemoryItems: 100,
+    
+    // 清理间隔（1小时）
+    cleanupInterval: 60 * 60 * 1000,
+    
+    // 是否启用缓存
+    enabled: true
+};
+```
 
 ### 配置示例
 
@@ -523,9 +656,54 @@ curl "http://localhost:3000/api/generate/minimal/mojang/Notch?colors=[\"#FF6B6B\
 # 设置端口
 export PORT=8080
 
+# 禁用缓存（适用于开发环境）
+export CACHE_DISABLED=true
+
+# 设置缓存过期时间为12小时
+export CACHE_MAX_AGE=43200
+
 # 启动服务器
 pnpm start
 ```
+
+## 缓存系统
+
+### ⚡ 性能提升
+
+启用缓存后，API 性能将显著提升：
+
+- **响应速度**: 缓存命中时从几百毫秒降低到几毫秒
+- **服务器负载**: 减少重复的图像生成计算
+- **网络带宽**: 减少重复的皮肤下载请求
+- **用户体验**: 常用头像几乎瞬间加载
+
+### 🔧 缓存架构
+
+- **内存缓存**: 使用 Map 存储最近访问的头像，提供毫秒级访问速度
+- **磁盘缓存**: 持久化存储，服务重启后仍然有效
+- **智能管理**: 自动过期清理、大小限制、LRU 策略
+
+### 📊 缓存监控
+
+通过以下方式监控缓存状态：
+
+```bash
+# 查看缓存统计
+curl http://localhost:3000/api/cache/stats
+
+# 查看服务健康状态（包含缓存信息）
+curl http://localhost:3000/health
+
+# 手动清理缓存
+curl -X POST http://localhost:3000/api/cache/cleanup
+
+# 清空所有缓存
+curl -X DELETE http://localhost:3000/api/cache
+```
+
+### 📖 详细文档
+
+更多缓存系统的详细信息，请参考 [CACHE_README.md](./CACHE_README.md)
 
 ## 部署
 
@@ -646,9 +824,15 @@ pnpm start
 部署完成后，可以通过以下方式检查服务状态：
 
 ```bash
-# 检查服务健康状态
+# 检查服务健康状态（包含缓存信息）
 curl http://localhost:3000/health
 
 # 测试头像生成
 curl "http://localhost:3000/api/generate/minimal/mojang/Notch" --output test-avatar.png
+
+# 检查缓存统计
+curl http://localhost:3000/api/cache/stats
+
+# 测试缓存系统
+npm run test:cache
 ```

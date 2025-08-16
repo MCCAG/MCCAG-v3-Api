@@ -6,10 +6,14 @@ import { createCanvas, loadImage } from 'canvas';
 import { Logger } from './Scripts/Logger.js';
 import { fetchMojangProfile, fetchSkinWebsiteProfile } from './Scripts/Network.js';
 import { renderAvatar, renderBackground, regulateAvatar } from './Scripts/Index.js';
+import { initializeCache } from './Scripts/Cache.js';
+import { config } from './Config.js';
+
+// 初始化缓存
+const avatarCache = initializeCache(config);
 
 const app = express();
-const port = process.env.PORT || 3000;
-const version = '1.0.1';
+const version = '1.0.2';
 
 // 请求日志中间件
 app.use((req, res, next) => {
@@ -133,10 +137,38 @@ function handleApiError(error, res, context = 'Generator') {
     });
 }
 
-// 生成头像图片的核心函数
+// 生成头像图片的核心函数（带缓存）
 async function generateAvatarImage(method, skinData, modelType, generateOptions, backgroundOptions) {
     Logger.log('Generator', `开始生成头像 - 模型：${modelType}，方式：${method}`);
 
+    // 如果缓存被禁用，直接生成
+    if (!config.cacheEnabled) {
+        Logger.log('Generator', '缓存已禁用，直接生成头像');
+        return await generateAvatarImageDirect(method, skinData, modelType, generateOptions, backgroundOptions);
+    }
+
+    // 尝试从缓存获取
+    const cachedBuffer = await avatarCache.get(method, skinData, modelType, generateOptions, backgroundOptions);
+    if (cachedBuffer) {
+        Logger.log('Generator', `缓存命中，直接返回 - ${cachedBuffer.length} Bytes`);
+        return cachedBuffer;
+    }
+
+    // 缓存未命中，生成新头像
+    Logger.log('Generator', '缓存未命中，开始生成新头像');
+    const buffer = await generateAvatarImageDirect(method, skinData, modelType, generateOptions, backgroundOptions);
+
+    // 异步保存到缓存（不阻塞响应）
+    if (config.cacheEnabled) {
+        avatarCache.set(method, skinData, modelType, generateOptions, backgroundOptions, buffer)
+            .catch(error => Logger.error('Generator', '保存缓存失败', error));
+    }
+
+    return buffer;
+}
+
+// 直接生成头像图片（不使用缓存）
+async function generateAvatarImageDirect(method, skinData, modelType, generateOptions, backgroundOptions) {
     // 获取皮肤图片
     const skinImage = await getSkinImage(method, skinData);
 
@@ -168,21 +200,44 @@ async function generateAvatarImage(method, skinData, modelType, generateOptions,
 }
 
 
-app.get('/health', (_req, res) => {
+app.get('/health', async (_req, res) => {
     const memoryUsage = process.memoryUsage();
     const uptime = process.uptime();
 
-    res.json({
-        status: 'ok',
-        version,
-        message: 'Minecraft 头像生成器服务运行正常！',
-        uptime: `${Math.floor(uptime / 60)}分${Math.floor(uptime % 60)}秒`,
-        memory: {
-            used: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
-            total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`
-        },
-        timestamp: new Date().toISOString()
-    });
+    try {
+        const cacheStats = await avatarCache.getStats();
+        
+        res.json({
+            status: 'ok',
+            version,
+            message: 'Minecraft 头像生成器服务运行正常！',
+            uptime: `${Math.floor(uptime / 60)}分${Math.floor(uptime % 60)}秒`,
+            memory: {
+                used: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+                total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`
+            },
+            cache: cacheStats ? {
+                diskFiles: cacheStats.diskCache.files,
+                diskSize: cacheStats.diskCache.sizeFormatted,
+                memoryItems: cacheStats.memoryCache.items
+            } : null,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        // 如果获取缓存统计失败，仍然返回基本健康信息
+        res.json({
+            status: 'ok',
+            version,
+            message: 'Minecraft 头像生成器服务运行正常！',
+            uptime: `${Math.floor(uptime / 60)}分${Math.floor(uptime % 60)}秒`,
+            memory: {
+                used: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+                total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`
+            },
+            cache: null,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // 生成头像API
@@ -433,6 +488,57 @@ app.get('/api/models', (_req, res) => {
     });
 });
 
+// 缓存管理 API
+app.get('/api/cache/stats', async (_req, res) => {
+    try {
+        const stats = await avatarCache.getStats();
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        Logger.error('Cache', '获取缓存统计失败', error);
+        res.status(500).json({
+            success: false,
+            message: '获取缓存统计失败'
+        });
+    }
+});
+
+// 清空缓存
+app.delete('/api/cache', async (_req, res) => {
+    try {
+        await avatarCache.clear();
+        res.json({
+            success: true,
+            message: '缓存已清空'
+        });
+    } catch (error) {
+        Logger.error('Cache', '清空缓存失败', error);
+        res.status(500).json({
+            success: false,
+            message: '清空缓存失败'
+        });
+    }
+});
+
+// 手动触发缓存清理
+app.post('/api/cache/cleanup', async (_req, res) => {
+    try {
+        await avatarCache.cleanup();
+        res.json({
+            success: true,
+            message: '缓存清理完成'
+        });
+    } catch (error) {
+        Logger.error('Cache', '手动清理缓存失败', error);
+        res.status(500).json({
+            success: false,
+            message: '缓存清理失败'
+        });
+    }
+});
+
 // 错误处理中间件
 app.use((error, req, res, _next) => {
     Logger.error('Server', `服务器错误：${req.method} ${req.url}`, error);
@@ -472,8 +578,8 @@ app.use((_req, res) => {
 });
 
 // 启动服务器
-app.listen(port, () => {
-    Logger.log('Server', `服务器启动 - http://0.0.0.0:${port}`);
+app.listen(config.port, () => {
+    Logger.log('Server', `服务器启动 - http://0.0.0.0:${config.port}`);
 
     // 定期内存监控(每5分钟)
     setInterval(() => {
