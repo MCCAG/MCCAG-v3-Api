@@ -13,7 +13,7 @@ import { config } from './Config.js';
 const avatarCache = initializeCache(config);
 
 const app = express();
-const version = '1.0.2';
+const version = '1.0.3';
 
 // 中间件
 app.use(cors());

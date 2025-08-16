@@ -1,6 +1,6 @@
 {
   "name": "minecraft-cute-avatar-generator-api",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Minecraft头像生成器HTTP服务器",
   "main": "Server.js",
   "type": "module",
