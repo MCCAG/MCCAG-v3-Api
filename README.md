@@ -1,13 +1,21 @@
+<div align="center">
+
 # MCCAG HTTP API
 
-基于 Node.js 的 Minecraft 头像生成器 API 服务。
+_Minecraft Cute Avatar Generator Api_  
+_使用 API 轻松生成个性化的 Minecraft 头像_
 
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg)](https://github.com/users/YOUR_USERNAME/packages/container/package/minecraft-cute-avatar-generator-api)
 [![Node.js](https://img.shields.io/badge/node.js-6DA55F)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+**[接口文档](https://github.com/MCCAG/MCCAG-v3-Api#api-接口文档)**
 
-[接口文档](https://github.com/MCCAG/MCCAG-v3-Api#api-%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3)
+**[公用 API 列表](https://github.com/MCCAG/MCCAG-v3-Api#🙏-使用公用-API)**
+
+</div>
+
+基于 Node.js 的 Minecraft 头像生成器 API 服务。
 
 ## 特性
 
@@ -41,7 +49,20 @@
 
 ## 快速开始
 
-### 🐳 Docker 部署（推荐）
+### 🙏 使用公用 API
+
+**感谢所有提供公用 API 的贡献者！同时也希望使用者不要滥用，让我们共同构建一个和谐互助的社区环境！**
+
+> 若你也想贡献，可以提出 Issue 或者直接 Pr 我们将会收录到这里。
+
+收录顺序按时间排列，以下为收录的 API 列表：
+
+- https://x.xzt.plus/ 提供者 [LoosePrince](https://github.com/LoosePrince)
+
+> [!CAUTION]
+> 但同时，这些 API 由贡献者提供，作者无法保证其可用性，并且对于其带来的所有问题都与作者无关。但无论如何，都感谢贡献者们的贡献。
+
+### 🐳 Docker 部署
 
 使用 Docker 是最简单的部署方式，无需安装 Node.js 和系统依赖：
 
