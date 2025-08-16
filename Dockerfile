@@ -1,8 +1,9 @@
 # 使用官方Node.js镜像作为基础镜像
 FROM node:18-alpine
 
-# 安装canvas依赖
+# 安装canvas依赖和构建工具
 RUN apk add --no-cache \
+    build-base \
     cairo-dev \
     jpeg-dev \
     pango-dev \
@@ -11,7 +12,10 @@ RUN apk add --no-cache \
     pixman-dev \
     pangomm-dev \
     libjpeg-turbo-dev \
-    freetype-dev
+    freetype-dev \
+    python3 \
+    make \
+    g++
 
 # 设置工作目录
 WORKDIR /app
